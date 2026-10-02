@@ -8,6 +8,7 @@ returns.
 
 from __future__ import annotations
 
+import contextlib
 import io
 import logging
 import threading
@@ -161,10 +162,8 @@ class SoundMic:
         except Exception as exc:  # PortAudio raises a bare Exception subclass
             raise AudioError(f"Could not open microphone: {exc}") from exc
         self._stream = stream
-        try:
+        with contextlib.suppress(Exception):  # keep the requested rate as-is
             self._rate = int(stream.samplerate)
-        except Exception:  # noqa: BLE001 - keep the requested rate as-is
-            pass
 
     def stop(self) -> None:
         stream, self._stream = self._stream, None

@@ -15,7 +15,7 @@ from luxion.api.schemas import (
     ConversationSummary,
     MessageCreate,
 )
-from luxion.api.sse import sse_stream
+from luxion.api.sse import STREAM_HEADERS, sse_stream
 from luxion.database.session import get_db, get_session_factory
 from luxion.services import chat as chat_service
 from luxion.services import conversations as conversation_service
@@ -26,13 +26,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/conversations", tags=["conversations"])
 
 DbSession = Annotated[Session, Depends(get_db)]
-
-STREAM_HEADERS = {
-    "Cache-Control": "no-cache, no-transform",
-    "Connection": "keep-alive",
-    # Disables proxy buffering so deltas reach the client immediately.
-    "X-Accel-Buffering": "no",
-}
 
 
 def _or_404(conversation_id: str) -> HTTPException:

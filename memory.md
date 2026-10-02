@@ -10,15 +10,15 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 3.5 — Capabilities & Consent (complete, awaiting your review) |
-| **Next phase** | Phase 4 — Voice (backend mic capture decided) |
+| **Current phase** | Phase 4 — Voice (backend complete & lint-clean; frontend + tests outstanding) |
+| **Next phase** | Phase 5 — Memory + RAG (after Phase 4 is finished and eyeballed) |
 | **Last updated** | 2026-10-02 |
 | **Backend tests** | 179 passing, `ruff check` + `ruff format --check` clean |
 | **Frontend build** | `tsc -b && vite build` OK, `oxlint` clean |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | Repo initialized, **no commits yet** (awaiting user go-ahead) |
+| **Git** | 3 commits (`Initial Commit`, `Initial commit`, `Remove .opencode folder`); Phase 4 work is **uncommitted** |
 | **Default adapter** | **Ollama** (was OpenRouter via `.env`) — switchable by tapping a card in Settings |
-| **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. |
+| **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
 
 ---
 
@@ -598,6 +598,21 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 ## Open Items / Follow-ups
 
+- [ ] **Phase 4 remaining (resume here)**: (1) `frontend/src/lib/voice.ts`
+  types + fetchers + an EventSource hook; (2) `MicIcon`/`MicOffIcon` in
+  `components/icons.tsx`; (3) Composer mic button (push-to-talk fills the
+  input) + a live-listening toggle; (4) `ChatPage` subscribes to
+  `/api/voice/events`, turns each `command` event into a normal streamed chat
+  turn and calls `POST /api/voice/speak` with the final reply; (5) Settings →
+  **Voice** card (microphone/speaker/TTS/STT/wake word per PRD §32, using
+  `PUT /api/voice/config`); (6) `tests/test_voice.py` + `tests/test_voice_api.py`;
+  (7) re-run `pytest`, `ruff`, `oxlint`, `tsc -b && vite build`; (8) live
+  smoke on an alternate port.
+- [ ] Phase 4 eyeball once the UI exists: wake phrase arms and the next
+  utterance runs as a chat turn, PTT fills the composer, a reply is spoken,
+  Stop interrupts it, denying the mic capability in Windows makes
+  `POST /api/voice/listen` answer 400 with the OS reason.
+
 - [ ] **Restart the backend** (`.\scripts\dev.ps1`) — a process started before
   the adapter-switch change is still holding `127.0.0.1:8756`, so Settings
   currently talks to the old routes (`PUT /api/llm/provider` → 404 there).
@@ -623,7 +638,9 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 - [ ] **Rotate the OpenRouter key** — it was committed in source before being
   moved to `.env` (`sk-or-v1-6bdb…`). Rotate it on openrouter.ai; the key now
   lives only in the gitignored root `.env`.
-- [ ] Git: no commits yet — ask user before committing.
+- [ ] Git: repo now has 3 commits (`Initial Commit`, `Initial commit`,
+  `Remove .opencode folder`); **Phase 4 work is uncommitted** — ask before
+  committing.
 - [ ] **No browser verification yet** — uvicorn/vite preview smoke tests abort
   (SIGABRT) in this environment; only `pytest`, `ruff`, `oxlint`, `tsc`/`vite`
   evidence exists. Ask the user to eyeball: HUD labels clear of content,
@@ -653,7 +670,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 2 | Context Manager | ✅ done (2026-10-01) |
 | 3 | Tool Framework | ✅ done (2026-10-01) |
 | 3.5 | Capabilities & Consent | ✅ done (2026-10-02) — OS probe, app consents, calendar sources, executor hard gate, Settings card |
-| 4 | Voice | ⬜ (backend mic capture decided; mic capability gate already in place) |
+| 4 | Voice | 🟡 backend done (2026-10-02) — manager, VoiceConfig, /api/voice routes, deps; frontend + tests outstanding |
 | 5 | Memory + RAG | ⬜ |
 | 6 | Browser Agent | ⬜ |
 | 7 | Computer Automation | ⬜ |
@@ -663,3 +680,78 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 11 | Vision + Hardware | ⬜ |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
 | 13 | Advanced Agent | ⬜ |
+
+
+## Latest Update
+
+### Phase 4 — Voice (backend done 2026-10-02)
+
+**Decisions taken earlier (still holding)**: backend Python mic capture
+(sounddevice/PortAudio), faster-whisper for STT, pyttsx3/SAPI5 for TTS,
+energy VAD segmenter (no webrtcvad), wake word matched in Python against the
+transcript. The mic capability gate from Phase 3.5 is reused as a hard block.
+
+**Completed**
+
+- Read PRD Phase 4 block + settings tree voice section (§26 Voice System,
+  §33.1, §5.5 STT, §5.6 TTS, §32 Settings → Voice).
+- Verified whisper `base.en` is downloaded
+  (`~/.cache/huggingface/hub/models--Systran--faster-whisper-base.en`) and
+  7 input devices are visible to PortAudio on this machine.
+- `luxion/voice/audio.py` · `stt.py` · `tts.py` · `wake.py` — pre-existing
+  from the interrupted session, now linted (SIM105/SIM117/F401 fixed).
+- **`luxion/voice/manager.py` (new, ~800 lines)** — `VoiceManager`:
+  - states `idle | listening | transcribing | speaking`;
+  - one capture thread (PortAudio callback → bounded queue, drop-oldest) +
+    one STT worker thread + optional playback thread;
+  - `Segmenter` with adaptive noise floor + **rolling pre-roll** so the first
+    syllable of a wake phrase is never clipped;
+  - `start_listening()` / `stop_listening()` / `recognize()` (push-to-talk,
+    no wake word, returns `""` when nothing crossed the gate) / `speak()`
+    (block or fire-and-forget) / `stop_speaking()`;
+  - wake gate in `_publish_command()`: `strip_wake` → arm for
+    `wake_arm_s` → emit `command` (armed session skips the phrase);
+  - **barge-in**: while TTS plays, sustained level ≥ `max(0.15, gate*4)` for
+    `max(min_speech_s, 0.25)` s calls `stop_speaking()` → `spoken` event with
+    `interrupted: true` (threshold deliberately high — speaker echo can
+    otherwise self-interrupt);
+  - capability gate `_require_capability()` before mic **and** speaker;
+  - injectable seams for tests: `_mic_factory`, `_player`, `_tts_factory`,
+    `_stt_obj`; events fan out to asyncio queues via
+    `loop.call_soon_threadsafe` (keep-alive `ping` every 15 s).
+- **`luxion/voice/__init__.py` (new)** — package exports.
+- **`luxion/config/voice_override.py` (new)** — `<data_dir>/voice.json`
+  partial overlay (same contract as `llm_provider.json`: utf-8-sig tolerant,
+  write-then-rename, corrupt/unknown file ignored).
+- **`config/settings.py`** — new `VoiceConfig` (20 knobs: master, STT, TTS,
+  wake, VAD, barge-in, PTT) + `_valid_voice_values()` (drops unknown/invalid
+  keys, never fatal) + `apply_voice_overrides()` / `save_voice_overrides()`
+  wired into `get_settings()` (priority: defaults → `.env` → env → voice.json).
+- **`api/routes/voice.py` (new)** — `GET /api/voice`,
+  `POST /api/voice/listen {on}`, `POST /api/voice/recognize {timeout_s}`,
+  `POST /api/voice/speak {text, block}`, `POST /api/voice/stop`,
+  `GET /api/voice/events` (SSE), `PUT|DELETE /api/voice/config`.
+  `VoiceError` → 400. `_rebuild()` restarts the manager after a config write.
+  `VoiceConfigPatch` mirrors `VoiceConfig` field-for-field (needs a sync test).
+- **`api/sse.py`** — `STREAM_HEADERS` moved here (was private to
+  `routes/conversations.py`, which now imports it).
+- **`api/app.py`** — registers the voice router; lifespan calls
+  `close_voice_manager()` (never constructs one just to close it).
+- **`pyproject.toml`** — hard deps added: `numpy`, `sounddevice`,
+  `faster-whisper`, `pyttsx3` (all already present in `backend/.venv`).
+- **`.env.example`** — full `LUXION_VOICE__*` block (20 vars, documented).
+
+**Verified this session**: `ruff check .` clean, `ruff format .` clean,
+`pytest -q` = 179 passing (no regressions), all 8 voice routes present in
+the generated OpenAPI schema.
+
+**Frontend NOT started**: `lib/voice.ts`, mic icon, Composer mic button,
+ChatPage `command`-event → chat-turn → `speak(reply)` wiring, and the
+Settings → Voice card are all still to do.
+
+**Tests NOT written yet**: planned `tests/test_voice.py` (segmenter/pre-roll,
+wake arm + command emission, PTT happy/no-speech, capability denials,
+barge-in, config overlay) and `tests/test_voice_api.py` (route round trip +
+`VoiceConfigPatch` ↔ `VoiceConfig` field sync). Both should inject the fake
+mic/STT/TTS seams and monkeypatch
+`luxion.api.routes.voice.get_voice_manager`.

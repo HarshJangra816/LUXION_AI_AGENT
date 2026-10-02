@@ -13,8 +13,6 @@ from typing import Any
 
 import numpy as np
 
-from luxion.voice.audio import TARGET_RATE
-
 logger = logging.getLogger(__name__)
 
 

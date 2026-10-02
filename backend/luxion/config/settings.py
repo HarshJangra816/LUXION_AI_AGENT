@@ -10,6 +10,9 @@ Values come from (in increasing priority):
 4. The provider selection saved from the Settings page
    (``<data_dir>/llm_provider.json`` — adapter + model only, see
    :func:`apply_provider_selection`)
+5. The voice edits saved from the Settings page
+   (``<data_dir>/voice.json`` — partial overlay, see
+   :func:`apply_voice_overrides`)
 
 No secrets are ever hardcoded here. API keys are referenced either
 directly through a secret-typed setting or via an environment variable
@@ -26,6 +29,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from luxion.config.provider_override import load_selection
+from luxion.config.voice_override import load_overrides, save_overrides
 
 # Luxion/backend/luxion/config/settings.py -> parents: [config, luxion, backend, Luxion]
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -180,6 +184,66 @@ class LoggingConfig(BaseModel):
     backup_count: int = Field(default=3, ge=0)
 
 
+class VoiceConfig(BaseModel):
+    """Voice pipeline policy (PRD §26, §5.5, §5.6, Phase 4).
+
+    Defaults are chosen so the feature is *safe* out of the box: the mic is
+    only opened after the user asks for it, replies are only spoken while the
+    voice session is live, and every hardware gate is still enforced by
+    :mod:`luxion.security.capabilities` before anything touches a device.
+    """
+
+    master: bool = True
+    # -- speech to text (PRD §5.5) ----------------------------------------
+    stt_provider: str = "whisper"
+    stt_model: str = "base.en"
+    stt_device: str = "auto"
+    stt_compute_type: str = "int8"
+    #: "" = auto-detect; ``.en`` models are English-only regardless.
+    stt_language: str = ""
+    # -- text to speech (PRD §5.6) ----------------------------------------
+    tts_provider: str = "windows"
+    tts_enabled: bool = True
+    #: SAPI5 rate offset in words/minute around the voice's natural rate.
+    tts_rate: int = Field(default=0, ge=-50, le=100)
+    tts_volume: int = Field(default=100, ge=0, le=100)
+    # -- wake word (PRD §26) ----------------------------------------------
+    wake_enabled: bool = True
+    wake_phrase: str = "hey luxion"
+    #: Seconds a bare "Hey Luxion" stays armed awaiting the command.
+    wake_arm_s: float = Field(default=20.0, ge=1.0, le=120.0)
+    # -- capture / VAD ------------------------------------------------------
+    #: PortAudio device index or name fragment; "" = system default.
+    mic_device: str = ""
+    #: Energy gate for speech (RMS). Below the learned noise floor × 2.5.
+    vad_threshold: float = Field(default=0.01, gt=0.0, le=0.5)
+    min_speech_s: float = Field(default=0.2, ge=0.0, le=2.0)
+    silence_s: float = Field(default=0.9, ge=0.2, le=5.0)
+    max_utterance_s: float = Field(default=30.0, ge=3.0, le=240.0)
+    #: Stop TTS playback when the user talks over it (PRD §26 interruption).
+    barge_in: bool = True
+    #: Push-to-talk budget in the composer.
+    ptt_timeout_s: float = Field(default=15.0, ge=3.0, le=120.0)
+
+
+def _valid_voice_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`VoiceConfig` field with a sane type.
+
+    A hand-edited ``voice.json`` must never take the app down; unknown keys and
+    values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in VoiceConfig.model_fields:
+            continue
+        try:
+            VoiceConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="LUXION_",
@@ -196,6 +260,7 @@ class Settings(BaseSettings):
     context: ContextConfig = ContextConfig()
     security: SecurityConfig = SecurityConfig()
     tools: ToolsConfig = ToolsConfig()
+    voice: VoiceConfig = VoiceConfig()
     logging: LoggingConfig = LoggingConfig()
 
     @model_validator(mode="after")
@@ -240,11 +305,32 @@ def apply_provider_selection(settings: Settings) -> None:
         llm.base_url = base_url
 
 
+def apply_voice_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Voice edits onto ``settings.voice``.
+
+    Called by :func:`get_settings` after the provider selection. Only fields
+    the user actually changed are stored, so ``.env`` keeps every default it
+    was not told to change.
+    """
+    values = _valid_voice_values(load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.voice = VoiceConfig(**{**settings.voice.model_dump(), **values})
+
+
+def save_voice_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial voice overlay and refresh the cached settings."""
+    valid = _valid_voice_values(values)
+    save_overrides(settings.app.data_dir, valid)
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_directories()
     apply_provider_selection(settings)
+    apply_voice_overrides(settings)
     return settings
 
 

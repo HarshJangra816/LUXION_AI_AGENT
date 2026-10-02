@@ -11,11 +11,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from luxion import __version__
-from luxion.api.routes import capabilities, conversations, health, llm, tools, usage
+from luxion.api.routes import (
+    capabilities,
+    conversations,
+    health,
+    llm,
+    tools,
+    usage,
+    voice,
+)
 from luxion.config.settings import get_settings
 from luxion.database.session import dispose_engine, init_db
 from luxion.llm.registry import aclose_provider
 from luxion.logging_setup import configure_logging
+from luxion.voice.manager import close_voice_manager
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +47,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        close_voice_manager()
         await aclose_provider()
         dispose_engine()
         logger.info("backend_stopped")
@@ -67,6 +77,7 @@ def create_app() -> FastAPI:
     app.include_router(usage.router, prefix=API_PREFIX)
     app.include_router(tools.router, prefix=API_PREFIX)
     app.include_router(capabilities.router, prefix=API_PREFIX)
+    app.include_router(voice.router, prefix=API_PREFIX)
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

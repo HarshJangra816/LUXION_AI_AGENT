@@ -16,6 +16,11 @@ dependencies = [
     "psutil>=5.9",
     # Windows has no system tz database; zoneinfo needs this for IANA zones.
     "tzdata>=2024.1",
+    # Voice (Phase 4): mic capture / WAV playback, Whisper STT, Windows TTS.
+    "numpy>=1.26",
+    "sounddevice>=0.4.6",
+    "faster-whisper>=1.0",
+    "pyttsx3>=2.98",
 ]
 
 [project.optional-dependencies]

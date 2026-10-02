@@ -7,6 +7,7 @@ providers will plug into.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import re
 import tempfile
@@ -65,22 +66,19 @@ class WindowsTts:
             import pyttsx3
         except ImportError as exc:
             raise TtsError("pyttsx3 is not installed") from exc
-        with _SYNTH_LOCK:
-            with tempfile.TemporaryDirectory(prefix="luxion-tts-") as tmp:
-                path = Path(tmp) / "reply.wav"
-                engine = pyttsx3.init()
-                try:
-                    base_rate = int(engine.getProperty("rate") or 200)
-                    engine.setProperty("rate", max(80, min(450, base_rate + rate)))
-                    engine.setProperty("volume", max(0.0, min(1.0, volume / 100.0)))
-                    engine.save_to_file(speak, str(path))
-                    engine.runAndWait()
-                finally:
-                    try:
-                        engine.stop()
-                    except Exception:  # noqa: BLE001 - engine teardown is best-effort
-                        pass
-                data = path.read_bytes() if path.exists() else b""
+        with _SYNTH_LOCK, tempfile.TemporaryDirectory(prefix="luxion-tts-") as tmp:
+            path = Path(tmp) / "reply.wav"
+            engine = pyttsx3.init()
+            try:
+                base_rate = int(engine.getProperty("rate") or 200)
+                engine.setProperty("rate", max(80, min(450, base_rate + rate)))
+                engine.setProperty("volume", max(0.0, min(1.0, volume / 100.0)))
+                engine.save_to_file(speak, str(path))
+                engine.runAndWait()
+            finally:
+                with contextlib.suppress(Exception):  # teardown is best-effort
+                    engine.stop()
+            data = path.read_bytes() if path.exists() else b""
         if not data:
             raise TtsError("Synthesis produced no audio")
         return data
