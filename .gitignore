@@ -1,0 +1,52 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# --- Node ---
+node_modules/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+
+# --- Rust / Tauri ---
+target/
+src-tauri/target/
+
+# --- Env & secrets ---
+.env
+.env.local
+*.key
+*.pem
+# stray key files at the repo root (e.g. `api_key`)
+api_key
+# opencode.json holds the 21st.dev MCP API key
+opencode.json
+
+# --- Data & runtime ---
+database/*.db
+database/*.db-*
+# Local UI state (Settings → active provider adapter + per-adapter model)
+database/*.json
+database/*.json.tmp
+# Local calendar Luxion writes to (Settings → connect local .ics)
+database/*.ics
+logs/
+*.log
+
+# --- OS / IDE ---
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

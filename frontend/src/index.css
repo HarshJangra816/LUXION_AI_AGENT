@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens follow design-system/luxion/MASTER.md
+ * (ui-ux-pro-max skill: Glassmorphism + dark tech / status green).
+ *
+ * NOTE: tokens MUST live in `@theme` (not plain `:root`) or Tailwind will not
+ * generate the matching utilities — bg-panel / text-ink / bg-accent would
+ * silently produce nothing.
+ *
+ * `--color-accent` and `--color-tint` are re-pointed at runtime by
+ * src/lib/appearance.tsx (Settings → Appearance).
+ */
+@theme {
+  --color-surface: #0f172a;
+  --color-panel: #1b2336;
+  --color-panel-2: #272f42;
+  --color-primary: #a855f7;
+  --color-edge: rgb(71 85 105 / 0.55);
+  --color-edge-strong: #475569;
+  --color-ink: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-accent: #22c55e;
+  --color-on-accent: #0f172a;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Semantic green is never themed — health/status must stay readable. */
+  --color-status-ok: #22c55e;
+
+  /* Chrome accent (nav, focus, HUD, particles) — themed. */
+  --color-tint: #38bdf8;
+
+  --font-sans: 'Fira Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Fira Code', 'Cascadia Code', Consolas, ui-monospace, monospace;
+}
+
+html {
+  /* Settings → Appearance scales every rem-based size in the app. */
+  font-size: var(--lux-scale, 16px);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  /* Deep-blueprint base; AmbientBackground paints the layers on top. */
+  background:
+    radial-gradient(1200px 800px at 50% -10%, #0b2545 0%, #061426 45%, #020a16 100%),
+    var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Heading font: Fira Code (MASTER.md typography) */
+h1,
+h2,
+h3 {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* Visible keyboard focus (pre-delivery checklist) */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-tint) 85%, white);
+  outline-offset: 2px;
+}
+
+/* Glassmorphism base: frosted, layered, subtle white edge */
+.glass {
+  background: rgb(27 35 54 / 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+
+/*
+ * Readability scrim — sits between the WebGL core and every content layer so
+ * the glow never eats a headline.
+ */
+.scrim {
+  background: linear-gradient(
+    to bottom,
+    rgb(2 8 18 / 0) 0%,
+    rgb(2 8 18 / 0.05) 38%,
+    rgb(2 8 18 / 0.55) 54%,
+    rgb(2 8 18 / 0.8) 75%,
+    rgb(2 8 18 / 0.88) 100%
+  );
+}
+
+/*
+ * Dashboard core HUD (src/components/three/CoreHUD.tsx).
+ * `--lux-core-scroll` is published by DashboardPage's content scroller
+ * (0 → 1 across the first 160px of scroll): the HUD recedes into the
+ * distance and vanishes as content scrolls past. Transform/opacity/filter
+ * only, so it stays on the compositor and needs no React re-render.
+ */
+.hud-parallax {
+  transform-origin: 50% 50%;
+  transform: translateY(calc(var(--lux-core-scroll, 0) * -56px))
+    scale(calc(1 - var(--lux-core-scroll, 0) * 0.18));
+  filter: blur(calc(var(--lux-core-scroll, 0) * 2.5px));
+  opacity: calc(1 - var(--lux-core-scroll, 0) * 1.25);
+}
+
+/*
+ * Galaxy layer star dust (src/components/GalaxyField.tsx).
+ * Both animations are transform/opacity only, so they stay on the compositor;
+ * the global reduced-motion block below neutralises them automatically.
+ */
+
+/*.lux-stars-a {
+  animation: lux-twinkle 6.5s ease-in-out infinite;
+}
+.lux-stars-b {
+  animation: lux-twinkle 9s ease-in-out infinite;
+  animation-delay: -3.2s;
+}
+*/
+/*@keyframes lux-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0;
+  }
+}*/
+
+/* Respect prefers-reduced-motion (pre-delivery checklist) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
