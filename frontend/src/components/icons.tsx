@@ -148,3 +148,29 @@ export function XIcon({ className }: IconProps) {
   )
 }
 
+/** Microphone — push-to-talk and live listening (Phase 4). */
+export function MicIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 3.5a2.6 2.6 0 0 1 2.6 2.6v5.2a2.6 2.6 0 0 1-5.2 0V6.1A2.6 2.6 0 0 1 12 3.5z" />
+      <path d="M6.6 11.2a5.4 5.4 0 0 0 10.8 0" />
+      <path d="M12 16.6V20" />
+      <path d="M9 20h6" />
+    </svg>
+  )
+}
+
+/** Microphone muted — live listening is off. */
+export function MicOffIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 3.5a2.6 2.6 0 0 1 2.6 2.6v3.1" />
+      <path d="M9.4 8.1v3.2a2.6 2.6 0 0 0 4.3 2" />
+      <path d="M6.6 11.2a5.4 5.4 0 0 0 8.4 4.5" />
+      <path d="M17.4 11.2c0 .6-.07 1.2-.2 1.7" />
+      <path d="M12 16.6V20" />
+      <path d="M4 4l16 16" />
+    </svg>
+  )
+}
+

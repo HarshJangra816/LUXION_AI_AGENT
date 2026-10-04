@@ -50,6 +50,7 @@ import {
   type SizeId,
 } from '../../lib/appearance'
 import { useAIState } from '../../lib/aiState'
+import { VoiceCard } from './VoiceCard'
 import { MAX_BRIGHTNESS, MIN_BRIGHTNESS, useGraphics, type Quality } from '../../lib/graphics'
 import {
   formatCost,
@@ -1258,6 +1259,8 @@ export function SettingsPage() {
           </>
         ) : null}
       </section>
+
+      <VoiceCard caps={caps} />
 
       <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
         <div className="flex items-center gap-2">

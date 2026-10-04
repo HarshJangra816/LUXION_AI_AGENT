@@ -202,11 +202,22 @@ class VoiceConfig(BaseModel):
     #: "" = auto-detect; ``.en`` models are English-only regardless.
     stt_language: str = ""
     # -- text to speech (PRD §5.6) ----------------------------------------
+    #: ``windows`` = offline SAPI5, ``omnivoice`` = local neural voice design.
     tts_provider: str = "windows"
     tts_enabled: bool = True
     #: SAPI5 rate offset in words/minute around the voice's natural rate.
     tts_rate: int = Field(default=0, ge=-50, le=100)
     tts_volume: int = Field(default=100, ge=0, le=100)
+    #: OmniVoice model id or local path (only used by the omnivoice provider).
+    tts_model: str = "k2-fsa/OmniVoice"
+    #: Voice design prompt, e.g. "female, british accent, moderate pitch".
+    #: Blank lets the model pick a voice on its own.
+    tts_instruct: str = "female, young adult, moderate pitch"
+    #: Diffusion steps - fewer steps synthesize faster on the CPU
+    #: (~11 s at 4, ~23 s at 8, ~47 s at 16 for a short sentence).
+    tts_steps: int = Field(default=8, ge=4, le=64)
+    #: OmniVoice language hint ("English", "en", ...); "" = language agnostic.
+    tts_language: str = ""
     # -- wake word (PRD §26) ----------------------------------------------
     wake_enabled: bool = True
     wake_phrase: str = "hey luxion"
@@ -319,9 +330,16 @@ def apply_voice_overrides(settings: Settings) -> None:
 
 
 def save_voice_overrides(settings: Settings, values: dict[str, object]) -> None:
-    """Persist a partial voice overlay and refresh the cached settings."""
+    """Persist a partial voice overlay and refresh the cached settings.
+
+    The overlay only ever holds the fields the user actually touched, so a
+    patch must **merge** into what is already stored — writing it verbatim
+    would silently revert every knob the user had changed earlier back to
+    ``.env``. Nothing to store (every key was invalid) leaves the file alone.
+    """
     valid = _valid_voice_values(values)
-    save_overrides(settings.app.data_dir, valid)
+    if valid:
+        save_overrides(settings.app.data_dir, {**load_overrides(settings.app.data_dir), **valid})
     reset_settings_cache()
 
 

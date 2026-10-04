@@ -7,6 +7,7 @@
 ``POST   /api/voice/stop``      interrupt whatever is playing
 ``GET    /api/voice/events``    SSE: state / level / transcript / wake /
                                 command / spoken / error
+``GET    /api/voice/config``    effective settings + built-in defaults
 ``PUT    /api/voice/config``    persist the Settings → Voice edits
 ``DELETE /api/voice/config``    back to ``.env`` defaults
 """
@@ -20,11 +21,23 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from luxion.api.sse import STREAM_HEADERS, sse_stream
-from luxion.config.settings import get_settings, reset_settings_cache, save_voice_overrides
+from luxion.config.settings import (
+    VoiceConfig,
+    get_settings,
+    reset_settings_cache,
+    save_voice_overrides,
+)
 from luxion.config.voice_override import clear_overrides
 from luxion.voice.manager import VoiceError, VoiceStatus, get_voice_manager, reset_voice_manager
 
 router = APIRouter(prefix="/voice", tags=["voice"])
+
+
+class VoiceConfigBundle(BaseModel):
+    """What Settings → Voice edits (effective values + built-in defaults)."""
+
+    config: VoiceConfig
+    defaults: VoiceConfig
 
 
 class ListenBody(BaseModel):
@@ -62,6 +75,10 @@ class VoiceConfigPatch(BaseModel):
     tts_enabled: bool | None = None
     tts_rate: int | None = None
     tts_volume: int | None = None
+    tts_model: str | None = None
+    tts_instruct: str | None = None
+    tts_steps: int | None = None
+    tts_language: str | None = None
     wake_enabled: bool | None = None
     wake_phrase: str | None = None
     wake_arm_s: float | None = None
@@ -133,6 +150,12 @@ async def voice_events() -> StreamingResponse:
     )
 
 
+@router.get("/config", response_model=VoiceConfigBundle)
+def read_config() -> VoiceConfigBundle:
+    """Effective voice settings (defaults → `.env` → `voice.json`) + defaults."""
+    return VoiceConfigBundle(config=get_settings().voice, defaults=VoiceConfig())
+
+
 @router.put("/config", response_model=VoiceStatus)
 def update_config(body: VoiceConfigPatch) -> VoiceStatus:
     """Persist the Settings → Voice edits and rebuild the session."""
@@ -160,4 +183,11 @@ def _rebuild() -> VoiceStatus:
     return get_voice_manager().status()
 
 
-__all__ = ["ListenBody", "RecognizeBody", "SpeakBody", "VoiceConfigPatch", "router"]
+__all__ = [
+    "ListenBody",
+    "RecognizeBody",
+    "SpeakBody",
+    "VoiceConfigBundle",
+    "VoiceConfigPatch",
+    "router",
+]

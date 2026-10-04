@@ -714,7 +714,7 @@ class VoiceManager:
         self._barge_run = 0.0
         self._emit_state()
         try:
-            provider = self._tts_factory(cfg.tts_provider)
+            provider = self._tts_factory(cfg.tts_provider, voice=cfg)
             data = provider.synthesize(text, rate=cfg.tts_rate, volume=cfg.tts_volume)
             completed = self._player(data, stop)
             interrupted = not completed

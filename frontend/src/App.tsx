@@ -32,7 +32,7 @@ function BrandMark() {
       <Logo size={32} glow />
       <div>
         <div className="text-sm font-semibold tracking-wide text-ink">Luxion</div>
-        <div className="text-[11px] text-muted">Personal AI Agent</div>
+        <div className="text-[11px] text-muted">Intelligence, at your command.</div>
       </div>
     </div>
   )

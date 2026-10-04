@@ -755,3 +755,74 @@ barge-in, config overlay) and `tests/test_voice_api.py` (route round trip +
 `VoiceConfigPatch` ↔ `VoiceConfig` field sync). Both should inject the fake
 mic/STT/TTS seams and monkeypatch
 `luxion.api.routes.voice.get_voice_manager`.
+
+## Phase 4 (Voice) - FINISHED, then extended with OmniVoice TTS
+
+**State of the code** (supersedes the "Frontend NOT started" / "Tests NOT written"
+notes above):
+
+- Frontend done: `frontend/src/lib/voice.ts` (types + fetchers + useVoiceEvents
+  SSE loop), mic/mic-off icons, Composer PTT + live-listen button, ChatPage
+  `command` -> chat turn -> `speak(reply)` (queued while a turn is in flight,
+  spoken only for voice-initiated turns), Settings -> Voice card (all PRD 32 rows,
+  level meter, Save/Discard/Reset-to-.env).
+- Backend tests: `tests/test_voice.py`, `tests/test_voice_api.py`,
+  `tests/test_voice_tts.py` -> `pytest -q` = 239 passing, `ruff check` +
+  `ruff format --check` clean, frontend `npm run lint` / `npx tsc -b` /
+  `npm run build` clean.
+- `GET /api/voice/config` returns `{config, defaults}`; `save_voice_overrides`
+  MERGES into voice.json (never replaces - a PATCH sends only changed fields).
+- `manager._tts_factory` is now called as `factory(provider, voice=cfg)`;
+  test fakes accept `**_kwargs`.
+
+### OmniVoice as an opt-in TTS provider (user request, Oct 2026)
+
+Repo cloned at `./OmniVoice`, installed editable as `omnivoice 0.2.1` inside
+`backend/.venv` (torch 2.14.1+cpu, transformers 5.18, soundfile, librosa).
+
+- `luxion/voice/tts.py`: `OmniVoiceTts` (lazy `OmniVoice.from_pretrained(
+  device_map="cpu")`, voice-design prompt, `num_step`, `speed`; PCM16 WAV via
+  soundfile) + `get_tts(provider, *, voice=cfg)` + per-model cache with
+  `reset_tts_cache()`. Windows SAPI stays the DEFAULT provider; omnivoice is
+  one dropdown away in Settings.
+- New `VoiceConfig` knobs (mirrored in `VoiceConfigPatch` and in
+  `frontend/src/lib/voice.ts` + VoiceCard): `tts_model` ("k2-fsa/OmniVoice"),
+  `tts_instruct` ("female, young adult, moderate pitch"),
+  `tts_steps` (default 8, ge 4, le 64), `tts_language` ("").
+- `tts_rate` maps to OmniVoice's own speed factor `1 + rate/100` clamped to
+  0.5..2.0 (no post-resample, pitch stays natural); `tts_volume` = sample gain.
+- STT stays faster-whisper: OmniVoice is TTS only (it uses Whisper internally
+  just to transcribe a reference clip for cloning).
+- OmniVoice instruct is a CONTROLLED vocabulary - "calm"/free text raises
+  ValueError, surfaced as TtsError. Valid items: gender, age, pitch, style,
+  accent (comma separated, English), dialects for Chinese.
+- PRD 5.6 "possible providers" now lists OmniVoice. `.env.example` documents the
+  four new `LUXION_VOICE__TTS_*` vars.
+
+**Measured on this machine** (CPU only, 8 logical / torch sees 4 threads):
+
+- model download first run: 4 min 45 s -> 3.0 GB in
+  `~/.cache/huggingface/hub/models--k2-fsa--OmniVoice`
+- warm process load: ~32 s (paid once per process, cached instance reused)
+- synthesis of a 2.8 s sentence: 4 steps ~11 s, 8 steps ~23 s, 16 steps ~47 s
+- `dtype=torch.bfloat16` is MUCH slower (125 s) - keep float32
+- real output proven: `%LOCALAPPDATA%\Temp\opencode\omni_smoke.wav`
+  (24 kHz PCM16, 2.80 s) - `play_wav` accepts any-rate 16-bit PCM
+- root `.env` has no `LUXION_VOICE__*` entries, so DELETE /config == defaults
+
+**OPEN ITEMS (deferred by the user, Oct 2026):**
+
+1. Two smoke uvicorn servers still listening: PID 17584 (:8124) and PID 18096
+   (:8126) - kill them.
+2. `database/voice.json` still holds the smoke override
+   `{"tts_provider":"omnivoice","tts_steps":4,"tts_instruct":"female, young
+   adult, moderate pitch"}` - run `DELETE /api/voice/config` (or delete the file)
+   to restore defaults.
+3. Latency strategy NOT decided: no background warm-up yet (the first reply pays
+   ~32 s load + synthesis), default stays 8 steps (~23 s/reply). Options on the
+   table: 4 steps + warm at startup, keep 8 steps + warm, leave as-is, or add
+   Piper (PRD 5.6) as the fast ~real-time local provider.
+4. `OmniVoice/` is untracked in git - decide gitignore vs. commit.
+5. `frontend/src/App.tsx` and `frontend/src/features/dashboard/DashboardPage.tsx`
+   are modified from an earlier session and still unreviewed; nothing is
+   committed yet.

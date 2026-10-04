@@ -14,7 +14,17 @@ import {
   type ConversationSummary,
 } from '../../lib/chat'
 import { resolveConfirmation } from '../../lib/tools'
-import { Composer } from './Composer'
+import {
+  getVoiceStatus,
+  recognize,
+  setVoiceListening,
+  speak,
+  stopSpeaking,
+  useVoiceEvents,
+  type VoiceEvent,
+  type VoiceStatus,
+} from '../../lib/voice'
+import { Composer, type ComposerVoice } from './Composer'
 import { ConversationList } from './ConversationList'
 import { MessageBubble, type ChatItem, type ToolRunView } from './MessageBubble'
 import { Logo } from '../../components/Logo'
@@ -118,10 +128,29 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
   /** True while a tool confirmation Allow/Deny request is in flight. */
   const [answering, setAnswering] = useState(false)
   const [answerError, setAnswerError] = useState<string | null>(null)
+  /** Voice session (mic open, gates, devices) — `null` until the first load. */
+  const [voiceStatus, setVoiceStatus] = useState<VoiceStatus | null>(null)
+  /** `POST /voice/recognize` is blocking on one utterance. */
+  const [pttBusy, setPttBusy] = useState(false)
+  /** Composer status line (armed / heard / voice errors); `null` = default note. */
+  const [voiceHint, setVoiceHint] = useState<string | null>(null)
 
   const { setState: setAIState, pulse } = useAIState()
   const abortRef = useRef<AbortController | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  /**
+   * Synchronous in-flight flag. `busy` is React state and lags a tick behind
+   * a real send, so a voice `command` landing in that window would otherwise
+   * start a second turn on the same conversation.
+   */
+  const inFlightRef = useRef(false)
+  /** This turn's reply must be spoken when it completes. */
+  const speakReplyRef = useRef(false)
+  /** Voice command that arrived while a turn was already running. */
+  const queuedVoiceRef = useRef<string | null>(null)
+  /** Text push-to-talk just produced — sending it verbatim speaks the reply. */
+  const pttTextRef = useRef<string | null>(null)
+  const sendRef = useRef<((text: string) => Promise<void>) | null>(null)
 
   /** True while the active conversation's history has not arrived yet. */
   const historyLoading = activeId !== null && loadedId !== activeId
@@ -188,7 +217,99 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
     [refreshList],
   )
 
-  const stop = useCallback(() => abortRef.current?.abort(), [])
+  const stop = useCallback(() => {
+    abortRef.current?.abort()
+    // A spoken reply must stop with the text that produced it (PRD §26).
+    void stopSpeaking().catch(() => undefined)
+  }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    // oxlint-disable-next-line react/set-state-in-effect -- async load, no sync setState
+    getVoiceStatus(controller.signal)
+      .then((next) => setVoiceStatus(next))
+      .catch(() => undefined) // voice optional: the buttons report errors on click
+    return () => controller.abort()
+  }, [])
+
+  /** Wake-word session on/off (the composer's live-listening toggle). */
+  const toggleLive = useCallback(async () => {
+    const next = !(voiceStatus?.listening && voiceStatus.state !== 'idle')
+    setVoiceHint(next ? 'Opening the microphone…' : 'Stopping the microphone…')
+    try {
+      const status = await setVoiceListening(next)
+      setVoiceStatus(status)
+      setVoiceHint(next ? `Listening — say “${status.wake.phrase}”` : null)
+    } catch (caught) {
+      setVoiceHint(messageOf(caught))
+      pulse('error', 1500)
+    }
+  }, [voiceStatus, pulse])
+
+  /** Push-to-talk: one utterance into the composer, reply spoken on send. */
+  const runPtt = useCallback(async () => {
+    if (pttBusy || inFlightRef.current) return
+    setPttBusy(true)
+    setVoiceHint('Listening — say your question…')
+    try {
+      const heard = (await recognize()).text.trim()
+      if (heard) {
+        pttTextRef.current = heard
+        setDraft((previous) => (previous.trim() ? `${previous.trim()} ${heard}` : heard))
+        setVoiceHint(`Heard: “${heard}” — Enter to send, the reply will be spoken`)
+      } else {
+        setVoiceHint('Nothing crossed the speech gate — try again')
+      }
+    } catch (caught) {
+      setVoiceHint(messageOf(caught))
+      pulse('error', 1600)
+    } finally {
+      setPttBusy(false)
+    }
+  }, [pttBusy, pulse])
+
+  /**
+   * Every voice frame. A `command` is just a user turn — the agent, its tools
+   * and its permissions are unchanged; only the reply gets spoken back.
+   */
+  const handleVoiceEvent = useCallback((event: VoiceEvent) => {
+    switch (event.type) {
+      case 'command': {
+        const text = event.text.trim()
+        if (!text) return
+        if (inFlightRef.current) {
+          queuedVoiceRef.current = text
+          setVoiceHint('Holding your command until this reply finishes…')
+          return
+        }
+        speakReplyRef.current = true
+        setVoiceHint(null)
+        void sendRef.current?.(text)
+        return
+      }
+      case 'wake':
+        setVoiceHint('Armed — speak your command')
+        return
+      case 'transcript':
+        if (event.text.trim()) setVoiceHint(`Heard: “${event.text.trim()}”`)
+        return
+      case 'state':
+        setVoiceStatus((previous) =>
+          previous && event.state ? { ...previous, state: event.state } : previous,
+        )
+        return
+      case 'spoken':
+        setVoiceHint(event.interrupted ? 'Reply cut short — you spoke over it' : null)
+        return
+      case 'error':
+        setVoiceHint(event.message)
+        return
+      default:
+        return
+    }
+  }, [])
+
+  useVoiceEvents(handleVoiceEvent)
 
   /**
    * Answer a `confirm` prompt. The backend is already parked inside the agent
@@ -234,8 +355,16 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
   const send = useCallback(
     async (text: string) => {
       const content = text.trim()
-      if (!content || busy) return
+      if (!content || inFlightRef.current) return
 
+      // Voice turns (wake command, or a PTT draft sent unchanged) are spoken.
+      const spoken =
+        speakReplyRef.current ||
+        (pttTextRef.current !== null && content === pttTextRef.current)
+      speakReplyRef.current = false
+      pttTextRef.current = null
+
+      inFlightRef.current = true
       setError(null)
       setDraft('')
       setBusy(true)
@@ -243,6 +372,8 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
 
       let pulsed = false
       let firstDelta = true
+      let completed = false
+      let replyText = ''
 
       const now = Date.now()
       setItems((previous) => [
@@ -281,6 +412,7 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
                 firstDelta = false
                 setAIState('speaking')
               }
+              replyText += delta.text
               setItems((previous) =>
                 previous.map((item) =>
                   item.key === assistantKey
@@ -335,6 +467,7 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
           },
           controller.signal,
         )
+        completed = true
       } catch (caught) {
         setItems((previous) =>
           previous.map((item) =>
@@ -360,12 +493,32 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
         }
       } finally {
         abortRef.current = null
+        inFlightRef.current = false
         setBusy(false)
         if (!pulsed) setAIState('idle')
+
+        // A voice-initiated turn is spoken back (PRD §26 response → TTS).
+        if (spoken && completed && replyText.trim()) {
+          void speak(replyText).catch((caught: unknown) => setVoiceHint(messageOf(caught)))
+        }
+
+        // A wake command that arrived mid-turn runs as soon as this one ends.
+        const queued = queuedVoiceRef.current
+        if (queued) {
+          queuedVoiceRef.current = null
+          speakReplyRef.current = true
+          setVoiceHint('Running your queued voice command…')
+          void sendRef.current?.(queued)
+        }
       }
     },
-    [activeId, busy, handleDone, pulse, refreshList, reloadMessages, setAIState],
+    [activeId, handleDone, pulse, refreshList, reloadMessages, setAIState],
   )
+
+  /** Keep the newest `send` visible to the voice event handler (stable identity). */
+  useEffect(() => {
+    sendRef.current = send
+  }, [send])
 
   async function handleSelect(id: string) {
     if (busy) stop()
@@ -405,6 +558,16 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
   const active = conversations.find((conversation) => conversation.id === activeId)
   const title = active?.title ?? 'New conversation'
   const showEmpty = !historyLoading && items.length === 0
+  /** Live listening is on: the wake-word session owns the microphone. */
+  const liveVoice = voiceStatus != null && voiceStatus.listening && voiceStatus.state !== 'idle'
+  const voiceControls: ComposerVoice = {
+    pttBusy,
+    onPtt: () => void runPtt(),
+    live: liveVoice,
+    onToggleLive: () => void toggleLive(),
+    hint: voiceHint,
+    disabled: voiceStatus != null && !voiceStatus.enabled,
+  }
 
   const list = (
     <ConversationList
@@ -523,6 +686,7 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
           onSend={() => void send(draft)}
           onStop={stop}
           busy={busy}
+          voice={voiceControls}
         />
       </section>
     </div>

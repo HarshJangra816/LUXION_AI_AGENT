@@ -266,6 +266,7 @@ Possible providers:
 
 - Piper
 - Windows TTS
+- OmniVoice (local neural TTS with voice design)
 - Cloud TTS providers
 
 Luxion should use a provider abstraction.
