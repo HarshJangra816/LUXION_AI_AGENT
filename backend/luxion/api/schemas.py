@@ -11,6 +11,7 @@ from luxion.config.settings import Settings
 from luxion.context import ContextStats
 from luxion.database.models import Conversation, Message
 from luxion.llm.registry import PROVIDER_SPECS, get_provider
+from luxion.memory.models import Memory
 from luxion.security.capabilities import (  # noqa: F401 - re-exported response models
     CapabilityInfo,
     CapabilityReport,
@@ -252,3 +253,50 @@ class CapabilityAction(BaseModel):
     label: str | None = None
     #: disconnect: one source id; omitted = disconnect every source
     id: str | None = None
+
+
+# ----------------------------------------------- memory (Phase 5b, PRD A15, A33.14)
+class MemoryCreate(BaseModel):
+    """``POST /api/memory`` — store one standalone statement."""
+
+    text: str = Field(min_length=1, max_length=2000)
+    kind: str = Field(default="fact", description="fact | preference | task | project | episode")
+    importance: float = Field(default=0.5, ge=0.0, le=1.0)
+
+
+class MemoryOut(BaseModel):
+    id: int
+    kind: str
+    text: str
+    source: str
+    importance: float
+    conversation_id: str | None = None
+    created_at: str | None = None
+    #: Only set on search results (PRD A16 ranking).
+    score: float | None = None
+
+    @classmethod
+    def from_model(cls, memory: Memory, *, score: float | None = None) -> MemoryOut:
+        payload = dict(memory.as_dict())
+        payload["score"] = score
+        return cls(**payload)
+
+
+class MemoryListOut(BaseModel):
+    items: list[MemoryOut] = []
+    total: int = 0
+    kind: str | None = None
+
+
+class MemorySearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    k: int = Field(default=6, ge=1, le=50)
+    min_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    kinds: list[str] | None = None
+
+
+class MemorySearchOut(BaseModel):
+    query: str
+    hits: list[MemoryOut] = []
+    #: Prompt-ready ``- [kind] text`` block (PRD A58 context integration).
+    preview: str = ""

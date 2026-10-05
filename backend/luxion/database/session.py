@@ -28,6 +28,15 @@ def get_engine() -> Engine:
         url = settings.db.url
         connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
         _engine = create_engine(url, echo=settings.db.echo, connect_args=connect_args)
+        if url.startswith("sqlite"):
+            # Register the sqlite-vec connect hook before any connection is
+            # handed out — a hook added later would not reach pooled
+            # connections that already exist.
+            from luxion.rag.vector_store import (  # noqa: PLC0415 - local import
+                install_vector_extension,
+            )
+
+            install_vector_extension(_engine)
     return _engine
 
 
@@ -50,10 +59,17 @@ def get_db() -> Iterator[Session]:
 def init_db() -> None:
     """Development bootstrap: create tables if they do not exist.
 
-    Schema evolution is handled by Alembic migrations (see ``backend/alembic``).
+    Schema evolution is handled by Alembic migrations (see ``backend/alembic``);
+    the RAG search indexes (FTS5 + vec0) are derived tables rebuilt from the
+    ORM data, so they are created here rather than migrated.
     """
-    get_settings().ensure_directories()
+    settings = get_settings()
+    settings.ensure_directories()
+    from luxion.rag import init_rag
+    from luxion.rag import models as _rag_models  # noqa: F401 - register tables
+
     Base.metadata.create_all(get_engine())
+    init_rag(get_engine(), dim_hint=settings.embedding_dim)
 
 
 def check_connection() -> bool:
@@ -71,3 +87,6 @@ def dispose_engine() -> None:
         _engine.dispose()
     _engine = None
     _session_factory = None
+    from luxion.rag.vector_store import reset_extension_state  # noqa: PLC0415
+
+    reset_extension_state()

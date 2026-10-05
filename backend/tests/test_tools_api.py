@@ -25,7 +25,17 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "system_stats",
         "read_file",
         "write_file",
+        # Phase 5b — long-term memory
+        "remember",
+        "recall",
+        "forget",
     }
+    remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
+    assert remember["risk"] == "medium"
+    assert remember["category"] == "memory"
+    assert remember["parameters"]["required"] == ["text"]
+    recall_tool = next(tool for tool in body["tools"] if tool["name"] == "recall")
+    assert recall_tool["risk"] == "low"
     write_file = next(tool for tool in body["tools"] if tool["name"] == "write_file")
     assert write_file["risk"] == "medium"
     assert write_file["permission"] == "allow"

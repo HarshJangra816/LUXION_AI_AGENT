@@ -43,6 +43,7 @@ from luxion.llm.errors import LLMError
 from luxion.llm.registry import get_provider
 from luxion.llm.system_prompt import build_system_prompt
 from luxion.llm.types import ChatMessage, StreamDelta, StreamDone, TokenUsage, ToolCall
+from luxion.memory.extraction import schedule_extraction
 from luxion.services.conversations import (
     ConversationNotFound,
     append_message,
@@ -378,6 +379,10 @@ async def stream_reply(
             context=built.stats if built else None,
             tools=tool_summaries or None,
         )
+        if message_id is not None:
+            # Phase 5b: harvest durable memories from the turns this reply just
+            # closed, without ever blocking the stream the client is reading.
+            schedule_extraction(conversation_id, settings=cfg)
 
 
 #: Run one tool call: permission check, optional confirmation, execution.

@@ -13,6 +13,9 @@ Values come from (in increasing priority):
 5. The voice edits saved from the Settings page
    (``<data_dir>/voice.json`` — partial overlay, see
    :func:`apply_voice_overrides`)
+6. The RAG edits saved from the Settings → Memory page
+   (``<data_dir>/rag.json`` — partial overlay, see
+   :func:`apply_rag_overrides`)
 
 No secrets are ever hardcoded here. API keys are referenced either
 directly through a secret-typed setting or via an environment variable
@@ -28,6 +31,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from luxion.config import rag_override
 from luxion.config.provider_override import load_selection
 from luxion.config.voice_override import load_overrides, save_overrides
 
@@ -237,6 +241,185 @@ class VoiceConfig(BaseModel):
     ptt_timeout_s: float = Field(default=15.0, ge=3.0, le=120.0)
 
 
+class EmbeddingModelSpec(BaseModel):
+    """One model offered by Settings → Memory (PRD §16 embedding step)."""
+
+    id: str
+    label: str
+    #: Vector width. ``chunks_vec`` is built with it, so changing model means
+    #: re-embedding (the store keeps the raw vectors, not just the index).
+    dim: int
+    size_gb: float
+    languages: str
+
+
+#: Curated fastembed models — every entry is in
+#: ``fastembed.TextEmbedding.list_supported_models()`` (asserted by tests), so
+#: the dropdown never offers something that needs a custom registration.
+EMBEDDING_MODELS: tuple[EmbeddingModelSpec, ...] = (
+    EmbeddingModelSpec(
+        id="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+        label="Multilingual MiniLM (recommended)",
+        dim=384,
+        size_gb=0.22,
+        languages="~50 languages (incl. Hindi, English)",
+    ),
+    EmbeddingModelSpec(
+        id="jinaai/jina-embeddings-v2-base-code",
+        label="Jina v2 Base — code & multilingual",
+        dim=768,
+        size_gb=0.64,
+        languages="30+ languages, code-aware",
+    ),
+    EmbeddingModelSpec(
+        id="BAAI/bge-small-en-v1.5",
+        label="BGE Small — English, lightest",
+        dim=384,
+        size_gb=0.067,
+        languages="English",
+    ),
+    EmbeddingModelSpec(
+        id="sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        label="Multilingual MPNet — largest",
+        dim=768,
+        size_gb=1.0,
+        languages="~50 languages (incl. Hindi)",
+    ),
+)
+
+DEFAULT_EMBEDDING_MODEL = EMBEDDING_MODELS[0].id
+
+#: Documents + source code extensions the indexer walks.
+DEFAULT_INDEX_EXTENSIONS: list[str] = [
+    ".md",
+    ".txt",
+    ".rst",
+    ".sql",
+    ".py",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".rs",
+    ".go",
+    ".java",
+    ".kt",
+    ".c",
+    ".h",
+    ".cpp",
+    ".hpp",
+    ".cs",
+    ".rb",
+    ".php",
+    ".sh",
+    ".ps1",
+    ".bat",
+    ".yml",
+    ".yaml",
+    ".toml",
+    ".json",
+    ".css",
+    ".html",
+]
+
+#: Directory / file names skipped entirely (matched against any path part).
+DEFAULT_EXCLUDE: list[str] = [
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "dist",
+    "build",
+    "target",
+    ".next",
+    ".cache",
+    "*.min.js",
+    "*.map",
+    "*.lock",
+    "*.svg",
+    "*.png",
+    "*.jpg",
+]
+
+
+def embedding_dim_of(model_id: str) -> int | None:
+    """Vector width for a curated model id (``None`` = unknown/custom)."""
+    for spec in EMBEDDING_MODELS:
+        if spec.id == model_id:
+            return spec.dim
+    return None
+
+
+class RAGConfig(BaseModel):
+    """Indexing + retrieval policy (PRD §16-17, Phase 5).
+
+    The token budget for what retrieval is allowed to inject lives in
+    :class:`ContextConfig` (that is where the budget maths runs); this model
+    only decides *what gets indexed* and *how it is ranked*.
+    """
+
+    #: Master switch — off means nothing is indexed and retrieval returns [].
+    enabled: bool = True
+    #: Embedding backend. ``fastembed`` is the only one shipped so far.
+    provider: str = "fastembed"
+    embedding_model: str = DEFAULT_EMBEDDING_MODEL
+    #: Prose chunk window (chars) and the tail carried into the next chunk.
+    chunk_chars: int = Field(default=800, ge=200, le=4000)
+    chunk_overlap: int = Field(default=120, ge=0, le=1000)
+    #: How many hits a query returns before ranking/filtering.
+    top_k: int = Field(default=6, ge=1, le=50)
+    #: Cosine floor in 0..1 (identical text = 1.0). Below it a hit is dropped.
+    min_score: float = Field(default=0.2, ge=0.0, le=1.0)
+    #: Documents + source code extensions the indexer walks.
+    index_extensions: list[str] = Field(default_factory=lambda: [*DEFAULT_INDEX_EXTENSIONS])
+    #: Directory / file names skipped entirely (matched against any path part).
+    exclude: list[str] = Field(default_factory=lambda: [*DEFAULT_EXCLUDE])
+    #: Embedding batch size for the re-embed job (CPU friendly).
+    reembed_batch: int = Field(default=32, ge=1, le=512)
+    #: Keep extracting durable facts from finished turns (PRD §15).
+    memory_extraction: bool = True
+    #: Ceiling on stored memories — the conversation itself is never stored
+    #: (PRD §58 rule 5), and this bounds what a long-lived install accumulates.
+    memory_max: int = Field(default=500, ge=10, le=100_000)
+
+    @field_validator("index_extensions", mode="before")
+    @classmethod
+    def _split_extensions(cls, value: object) -> object:
+        if isinstance(value, str):
+            # An empty env var must mean "the default", not "index nothing"
+            # (same call as ``SecurityConfig.allowed_workspaces``).
+            return [item.strip() for item in value.split(";") if item.strip()] or [
+                *DEFAULT_INDEX_EXTENSIONS
+            ]
+        return value
+
+    @field_validator("exclude", mode="before")
+    @classmethod
+    def _split_exclude(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [item.strip() for item in value.split(";") if item.strip()] or [*DEFAULT_EXCLUDE]
+        return value
+
+
+def _valid_rag_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`RAGConfig` field with a sane type.
+
+    A hand-edited ``rag.json`` must never take the app down; unknown keys and
+    values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in RAGConfig.model_fields:
+            continue
+        try:
+            RAGConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 def _valid_voice_values(values: dict[str, object]) -> dict[str, object]:
     """Drop anything that is not a real :class:`VoiceConfig` field with a sane type.
 
@@ -272,7 +455,17 @@ class Settings(BaseSettings):
     security: SecurityConfig = SecurityConfig()
     tools: ToolsConfig = ToolsConfig()
     voice: VoiceConfig = VoiceConfig()
+    rag: RAGConfig = RAGConfig()
     logging: LoggingConfig = LoggingConfig()
+
+    @property
+    def embedding_dim(self) -> int:
+        """Vector width of the configured model (curated models are known;
+        a custom id falls back to the default model's width until the store
+        records the real one in ``rag_meta``)."""
+        return embedding_dim_of(self.rag.embedding_model) or embedding_dim_of(
+            DEFAULT_EMBEDDING_MODEL
+        )
 
     @model_validator(mode="after")
     def _resolve_defaults(self) -> Settings:
@@ -343,12 +536,41 @@ def save_voice_overrides(settings: Settings, values: dict[str, object]) -> None:
     reset_settings_cache()
 
 
+def apply_rag_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Memory edits onto ``settings.rag``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/rag.json`` wins over
+    ``LUXION_RAG__*`` exactly like the voice and provider overlays.
+    """
+    values = _valid_rag_values(rag_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.rag = RAGConfig(**{**settings.rag.model_dump(), **values})
+
+
+def save_rag_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial RAG overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_rag_values(values)
+    if valid:
+        rag_override.save_overrides(
+            settings.app.data_dir,
+            {**rag_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
     settings.ensure_directories()
     apply_provider_selection(settings)
     apply_voice_overrides(settings)
+    apply_rag_overrides(settings)
     return settings
 
 

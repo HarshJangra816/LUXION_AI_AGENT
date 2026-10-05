@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 4 — Voice (backend complete & lint-clean; frontend + tests outstanding) |
-| **Next phase** | Phase 5 — Memory + RAG (after Phase 4 is finished and eyeballed) |
-| **Last updated** | 2026-10-02 |
-| **Backend tests** | 179 passing, `ruff check` + `ruff format --check` clean |
+| **Current phase** | Phase 4 — Voice ✅ code + tests + **live API smoke** done (2026-10-05); only the browser eyeball remains |
+| **Next phase** | Phase 5 — Memory + RAG (after the Phase 4 eyeball) |
+| **Last updated** | 2026-10-05 |
+| **Backend tests** | 239 passing, `ruff check` + `ruff format --check` clean |
 | **Frontend build** | `tsc -b && vite build` OK, `oxlint` clean |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 3 commits (`Initial Commit`, `Initial commit`, `Remove .opencode folder`); Phase 4 work is **uncommitted** |
+| **Git** | 5 commits; Phase 4 committed (`b3a798d` voice backend, `2a900c0` OmniVoice + voice UI); only `.gitmodules` untracked |
 | **Default adapter** | **Ollama** (was OpenRouter via `.env`) — switchable by tapping a card in Settings |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
 
@@ -598,25 +598,22 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 ## Open Items / Follow-ups
 
-- [ ] **Phase 4 remaining (resume here)**: (1) `frontend/src/lib/voice.ts`
-  types + fetchers + an EventSource hook; (2) `MicIcon`/`MicOffIcon` in
-  `components/icons.tsx`; (3) Composer mic button (push-to-talk fills the
-  input) + a live-listening toggle; (4) `ChatPage` subscribes to
-  `/api/voice/events`, turns each `command` event into a normal streamed chat
-  turn and calls `POST /api/voice/speak` with the final reply; (5) Settings →
-  **Voice** card (microphone/speaker/TTS/STT/wake word per PRD §32, using
-  `PUT /api/voice/config`); (6) `tests/test_voice.py` + `tests/test_voice_api.py`;
-  (7) re-run `pytest`, `ruff`, `oxlint`, `tsc -b && vite build`; (8) live
-  smoke on an alternate port.
-- [ ] Phase 4 eyeball once the UI exists: wake phrase arms and the next
-  utterance runs as a chat turn, PTT fills the composer, a reply is spoken,
-  Stop interrupts it, denying the mic capability in Windows makes
-  `POST /api/voice/listen` answer 400 with the OS reason.
+- [x] **Phase 4 remaining — ALL DONE (2026-10-05)**: (1) `frontend/src/lib/voice.ts`
+  types + fetchers + `useVoiceEvents`; (2) `MicIcon`/`MicOffIcon`; (3) Composer
+  PTT + live-listen toggle; (4) `ChatPage` `/api/voice/events` → `command` →
+  streamed chat turn → `POST /api/voice/speak`; (5) Settings → **Voice** card;
+  (6) `tests/test_voice.py` + `test_voice_api.py` + `test_voice_tts.py`;
+  (7) `pytest` 239 / `ruff` / `oxlint` / `tsc -b && vite build` all clean;
+  (8) **live smoke on an alternate port** → see *Phase 4 live smoke* below.
+- [ ] **Phase 4 eyeball — the only Phase 4 gap**: wake phrase arms and the next
+  utterance runs as a chat turn, PTT fills the composer, a reply is spoken, Stop
+  interrupts it. The **mic-denied 400 is already proven at the API level** (no
+  need to re-toggle Windows unless you want to see it in the UI).
 
-- [ ] **Restart the backend** (`.\scripts\dev.ps1`) — a process started before
-  the adapter-switch change is still holding `127.0.0.1:8756`, so Settings
-  currently talks to the old routes (`PUT /api/llm/provider` → 404 there).
-  The restart also picks up `GET|POST /api/capabilities` (Phase 3.5).
+- [ ] **Run `.\scripts\dev.ps1` for the eyeball** — no stale server is holding
+  `127.0.0.1:8756` anymore (verified 2026-10-05), so a fresh start gives you the
+  voice routes and `GET|POST /api/capabilities`. The only listener is the smoke
+  server on **:8763 (PID 4876)** — stop it when you are done with it.
 - [ ] **Eyeball Settings → Permissions & capabilities** (Phase 3.5): state
   chips live, *Windows settings* opens the right Settings page, *Allow/Turn
   off* flips and persists across reload, calendar connect with a blank path
@@ -638,14 +635,18 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 - [ ] **Rotate the OpenRouter key** — it was committed in source before being
   moved to `.env` (`sk-or-v1-6bdb…`). Rotate it on openrouter.ai; the key now
   lives only in the gitignored root `.env`.
-- [ ] Git: repo now has 3 commits (`Initial Commit`, `Initial commit`,
-  `Remove .opencode folder`); **Phase 4 work is uncommitted** — ask before
-  committing.
-- [ ] **No browser verification yet** — uvicorn/vite preview smoke tests abort
-  (SIGABRT) in this environment; only `pytest`, `ruff`, `oxlint`, `tsc`/`vite`
-  evidence exists. Ask the user to eyeball: HUD labels clear of content,
-  galaxy visible in the blank areas, logo readable, **and (Phase 3) the chat
-  tool chips + Allow/Deny card and Settings → Tools**.
+- [ ] Git: repo now has **5 commits** (… `b3a798d` Phase 4 voice backend,
+  `2a900c0` OmniVoice + voice UI + tests); only `.gitmodules` is untracked.
+  Nothing modified in the working tree — ask before committing the submodule.
+- [ ] **No browser verification yet** — the backend is now proven **live over
+  HTTP** (Phase 4 smoke on :8763, see *Phase 4 live smoke*), but no browser has
+  rendered the app: ask the user to eyeball HUD labels clear of content, galaxy
+  in the blank areas, logo readable, **(Phase 3)** chat tool chips + Allow/Deny
+  card + Settings → Tools, **(Phase 3.5)** Permissions & capabilities card,
+  **(Settings)** adapter cards, **(Phase 4)** Composer mic/PTT + Settings →
+  Voice. `vite preview`/headless smoke still aborts (SIGABRT) in this
+  environment, so only `pytest`, `ruff`, `oxlint`, `tsc`/`vite` + the HTTP smoke
+  count as evidence.
 - [ ] Phase 3 tools that need a live machine check: `take_screenshot`
   (PIL `ImageGrab`), `open_application`/`close_application` (Start Menu +
   psutil), `open_url` (default browser). `read_file`/`write_file` are scoped
@@ -670,7 +671,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 2 | Context Manager | ✅ done (2026-10-01) |
 | 3 | Tool Framework | ✅ done (2026-10-01) |
 | 3.5 | Capabilities & Consent | ✅ done (2026-10-02) — OS probe, app consents, calendar sources, executor hard gate, Settings card |
-| 4 | Voice | 🟡 backend done (2026-10-02) — manager, VoiceConfig, /api/voice routes, deps; frontend + tests outstanding |
+| 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
 | 5 | Memory + RAG | ⬜ |
 | 6 | Browser Agent | ⬜ |
 | 7 | Computer Automation | ⬜ |
@@ -812,17 +813,184 @@ Repo cloned at `./OmniVoice`, installed editable as `omnivoice 0.2.1` inside
 
 **OPEN ITEMS (deferred by the user, Oct 2026):**
 
-1. Two smoke uvicorn servers still listening: PID 17584 (:8124) and PID 18096
-   (:8126) - kill them.
-2. `database/voice.json` still holds the smoke override
-   `{"tts_provider":"omnivoice","tts_steps":4,"tts_instruct":"female, young
-   adult, moderate pitch"}` - run `DELETE /api/voice/config` (or delete the file)
-   to restore defaults.
+1. ~~Two smoke uvicorn servers still listening: PID 17584 (:8124) and PID 18096
+   (:8126)~~ — gone; verified 2026-10-05 (only listener left is the new smoke
+   server on **:8763, PID 4876** — `Ctrl+C` in that window when you are done).
+2. ~~`database/voice.json` still holds the smoke override~~ — cleared
+   2026-10-05 via `DELETE /api/voice/config`; the file is gone and the effective
+   config equals the defaults again.
 3. Latency strategy NOT decided: no background warm-up yet (the first reply pays
    ~32 s load + synthesis), default stays 8 steps (~23 s/reply). Options on the
    table: 4 steps + warm at startup, keep 8 steps + warm, leave as-is, or add
    Piper (PRD 5.6) as the fast ~real-time local provider.
-4. `OmniVoice/` is untracked in git - decide gitignore vs. commit.
+4. ~~`OmniVoice/` is now a **git submodule** (`url = https://github.com/k2-fsa/OmniVoice.git`,
+   branch `main`) but `.gitmodules` is still **untracked** — commit it or drop
+   the submodule.~~ — `.gitmodules` committed 2026-10-05.
 5. `frontend/src/App.tsx` and `frontend/src/features/dashboard/DashboardPage.tsx`
-   are modified from an earlier session and still unreviewed; nothing is
-   committed yet.
+   were committed in `2a900c0` but are still **unreviewed**.
+
+---
+
+## Phase 4 live smoke ✅ (2026-10-05, port 8763)
+
+Started with `$env:LUXION_SERVER__PORT='8763'; .\.venv\Scripts\python.exe -m luxion`
+(real root `.env`). Every call returned the expected result:
+
+| Check | Result |
+|-------|--------|
+| `GET /api/health` | `status=ok`, `database=ok` |
+| `GET /api/voice` | `state=idle`, 20 input devices, `microphone` **granted**, `speaker` **granted**, STT `whisper/base.en` (`loaded:false` until the first session) |
+| `GET /api/voice/config` | `{config, defaults}` |
+| `PUT /api/voice/config {"tts_steps":8}` | 200 → status; `database/voice.json` **merged** (`tts_steps` added, the rest kept) |
+| `POST /api/voice/listen {"on":true}` | `state=listening`, `device` = index 1 `Microphone Array (AMD…)` |
+| `GET /api/voice/events` (SSE) | 210 lines / 12 s → **105 `level` frames** (~11/s), framing correct |
+| `POST /api/voice/recognize {"timeout_s":5}` | `{"text":""}` — silent room, nothing crossed the gate (correct) |
+| `POST /api/voice/speak {block:false}` | `{"started":true,"interrupted":false}` → event `state:speaking` |
+| `POST /api/voice/stop` | `{"stopped":true}` → `state:idle` + **`spoken` with `interrupted:true`** |
+| `POST /api/voice/listen {"on":false}` | back to `idle` |
+| `DELETE /api/voice/config` | `database/voice.json` **deleted**; effective == defaults (`wake_phrase=hey luxion`, `tts_model=k2-fsa/OmniVoice`) |
+
+**Mic-denied path** — the OS consent value was flipped `Allow → Deny` on
+`HKCU\…\CapabilityAccessManager\ConsentStore\microphone` **and** its
+`NonPackaged` subkey, probed, then **restored to `Allow`** (both verified after):
+
+- `GET /api/voice` → `microphone {allowed:false, state:"blocked_by_os",
+  reason:"Microphone is blocked in Windows privacy settings"}`
+- `POST /api/voice/listen {"on":true}` → **400** `{"detail":"Microphone is blocked in Windows privacy settings"}`
+- `POST /api/voice/recognize` → **400**, same detail
+
+**Gates re-run this session**: backend `pytest` **239 passed** (`addopts = "-q"`
+in `pyproject.toml`, so `-q` on the CLI becomes `-qq` and hides the summary —
+run plain `pytest` to see the count), `ruff check .` clean,
+`ruff format --check .` clean (94 files); frontend `npm run lint` clean and
+`npm run build` (`tsc -b && vite build`) OK — only the pre-existing 888 kB
+`AI3DCore` chunk warning.
+
+**Still open**: the browser eyeball (wake → chat turn → spoken reply, PTT fills
+the composer, Stop interrupts, Settings → Voice card).
+
+**PowerShell 5.1 gotcha**: `curl.exe -d '{"on":true}'` loses the inner quotes →
+`json_invalid`. Use `Invoke-RestMethod … -Body '{"on":true}'`, or escape as
+`'{\"on\":true}'`. A fresh window has no `$b`, so the SSE call needs the full
+URL (`curl.exe -N http://127.0.0.1:8763/api/voice/events`).
+---
+
+## Phase 5a — Memory + RAG storage/index layer ✅ (2026-10-05)
+
+Milestone **5a** (of the approved 5a → 5d plan) is done: chunks can be written
+into SQLite and retrieved by hybrid (vector + keyword) search.
+
+**Stack (as decided):** `sqlite-vec` 0.1.9 (`vec0` ANN, loaded as an extension —
+`enable_load_extension` + `sqlite_vec.load(conn)`, *not* `loadable_extension()`),
+FTS5 for keywords, `fastembed` 0.8.1 for embeddings, `HashEmbeddingProvider`
+(deterministic sha1 bag-of-tokens) as the offline/test backend. **No PDF/DOCX
+support** — only `.md .txt .rst .sql` + source code (`DEFAULT_INDEX_EXTENSIONS`).
+
+**New files**
+
+| File | What it does |
+|------|--------------|
+| `luxion/rag/__init__.py` | package docs + `init_rag(engine, dim_hint)` |
+| `luxion/rag/vector_store.py` | vec0/FTS5 DDL, `write_chunks`, `delete_source`, `vector_search`, `keyword_search`, `hybrid_search` (RRF k=60), `sync_meta`, `rebuild_vector_index` |
+| `luxion/rag/schema.sql` | `chunks_fts` FTS5 DDL (`unicode61 remove_diacritics 2`, `chunk_id UNINDEXED`) |
+| `luxion/rag/models.py` | `Chunk` (text + float32 BLOB = source of truth) + `RagMeta` (id=1: model, dim, counts, pending_model) |
+| `luxion/rag/embeddings.py` | provider protocol, `FastEmbedProvider` (lazy/thread-safe), `HashEmbeddingProvider`, cache/reset |
+| `luxion/rag/chunking.py` | prose windows (paragraph/sentence + tail overlap) and line-bounded code chunks with `_is_boundary` |
+| `luxion/config/rag_override.py` | `rag.json` 4-layer overlay (mirrors `voice.json`) |
+| `tests/test_chunking.py`, `test_embeddings.py`, `test_vector_store.py` | 30 new tests |
+
+**Wiring:** `database/session.py::get_engine()` registers the sqlite-vec
+`connect` hook *before* any connection exists (a later hook misses pooled
+connections); `init_db()` imports the rag models (so `create_all` sees them),
+then `create_all`, then `init_rag()`; `dispose_engine()` calls
+`reset_extension_state()`.
+
+**Design points**
+
+- `chunks.embedding` (L2-normalised float32 BLOB) is the source of truth;
+  `chunks_vec` is a rebuildable accelerator and `chunks_fts` is derived too —
+  losing either costs a rebuild, never data.
+- euclidean k-NN on unit vectors ≡ cosine ranking; `min_score` filters on
+  cosine, keyword-only hits are always kept (that is what makes identifiers
+  retrievable from code).
+- **numpy fallback**: when `vec0` is unavailable, `vector_search` scans the
+  stored blobs (`SELECT vec_version()` probes availability, cached per engine).
+- `rag_meta.dim` decides the vec0 width; `pending_model` is the
+  "re-embed needed" signal for Settings → Memory. A configured model change
+  never destroys the live index.
+- Every list/`IN` filter went through ORM `Chunk.id.in_(...)` — SQLAlchemy's
+  `text()` + `bindparam(expanding=True)` does **not** expand here
+  (`row value misused`).
+
+**Bugs found and fixed during the 5a smoke**
+
+1. `chunking._LINE_BOUNDARY` had one `)` too many (`unbalanced parenthesis`).
+2. `HashEmbeddingProvider` read `range(0, 32, 4)` over a 20-byte sha1 digest
+   (`IndexError`) → `range(0, 18, 4)`.
+3. `rebuild_vector_index` passed raw bytes to `sqlite_vec.serialize_float32`
+   (which packs *floats*) → 4× oversized vectors; stored blobs are already in
+   vec0 raw format.
+4. `sync_meta` never wrote `model`/`dim` — now only records them once every
+   chunk carries that model.
+
+**Gates:** backend `pytest` **269 passed** (239 → 269), `ruff check .` clean,
+`ruff format --check .` clean (103 files). `tests/conftest.py` sets
+`LUXION_RAG__PROVIDER=hash` so the suite never downloads a model.
+
+**Next:** 5b — memory extraction (summaries + `remember`/`recall`/`forget`),
+then 5c — repository indexing/retriever over the working set, 5d — Settings →
+Memory UI + context injection.
+
+---
+
+## Phase 5b — memory extraction + remember/recall/forget tools (2026-10-05, code done, tests pending)
+
+Milestone **5b** is implemented end to end; the suite is green but the
+memory-specific test files are **not written yet** (that is the first thing to
+do next session).
+
+**New files**
+
+| File | What it does |
+|------|--------------|
+| `luxion/memory/models.py` | `Memory` table (kind/text/hash/source/importance/conversation_id/timestamps), `MEMORY_KINDS = ("fact","preference","task","project","episode")`, `chunk_source` → `memory:{id}` |
+| `luxion/memory/store.py` | `remember()` (normalize → dedupe by sha256 hash → `memory_max` cap → indexed), `get_memory`, `list_memories`, `count_memories`, `forget`, `clear_memories`, `index_memory` (falls back to keyword-only when embedding fails) |
+| `luxion/memory/recall.py` | `MemoryHit`, `recall()` over `hybrid_search(source_types={"memory"})`, `recent_memories()`, `format_memories()` |
+| `luxion/memory/extraction.py` | LLM JSON extractor + heuristic patterns (`My name is…`, `I prefer…`, `don't forget…`), `_load_turns`/`_mark_extracted` idempotency via `conversation.meta["memory_extracted_through"]`, `extract_from_conversation`, `schedule_extraction` |
+| `luxion/tools/builtin/memories.py` | `remember` (medium), `recall` (low, read-only), `forget` (medium) — PRD §33.14 commands |
+| `luxion/api/routes/memory.py` | `GET/POST /api/memory`, `POST /api/memory/search`, `DELETE /api/memory/{id}`, `DELETE /api/memory` (clear all) → 400 on `ValueError` |
+
+**Wiring:** `tools/builtin/__init__.py` registers the three tools (registry now
+ships **12**); `services/chat.py` calls `schedule_extraction(conversation_id,
+settings=cfg)` after the `ChatDone` event; `api/app.py` mounts the memory
+router; `api/schemas.py` gained `MemoryCreate`/`MemoryOut`/`MemoryListOut`/
+`MemorySearchRequest`/`MemorySearchOut`; `RAGConfig` gained
+`memory_extraction: bool = True` and `memory_max: int = 500`;
+`.env.example` documents `LUXION_RAG__MEMORY_EXTRACTION` / `MEMORY_MAX`.
+
+**Design points**
+
+- Memory chunks reuse the 5a pipeline: `write_chunks` now accepts
+  `np.ndarray | None` vectors so an embedding failure still indexes the
+  statement for keyword search.
+- `hybrid_search` gained `source_types` (over-fetch `breadth = k*4`, then
+  `return hits[:k]`) so `recall()` searches only `source_kind='memory'`
+  without a second query path.
+- Extraction is idempotent: each pass records how far into the conversation it
+  read, so a conversation is never harvested twice.
+- Store cap: reaching `memory_max` makes `remember()` raise `ValueError`
+  ("memory full") rather than growing forever; extraction is skipped silently.
+
+**Tests touched:** `test_tools.py` / `test_tools_api.py` expectations updated
+from the 9 initial tools to the 12 bundled tools (memory tools added, plus
+risk asserts: `recall=low`, `remember=forget=medium`).
+
+**Gates:** backend `pytest` **269 passed**, `ruff check .` clean,
+`ruff format --check .` clean (110 files).
+
+**Still open:** `tests/test_memory_store.py` / `test_memory_recall.py` /
+`test_memory_tools.py` / `test_memory_extraction.py`; then 5c — repository
+indexing/retriever; then 5d — Settings → Memory UI + context injection.
+
+**Housekeeping:** `.gitmodules` (OmniVoice submodule, gitlink already tracked)
+committed in this batch → resolves OPEN ITEM 4.

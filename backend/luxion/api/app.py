@@ -16,6 +16,7 @@ from luxion.api.routes import (
     conversations,
     health,
     llm,
+    memory,
     tools,
     usage,
     voice,
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(usage.router, prefix=API_PREFIX)
     app.include_router(tools.router, prefix=API_PREFIX)
     app.include_router(capabilities.router, prefix=API_PREFIX)
+    app.include_router(memory.router, prefix=API_PREFIX)
     app.include_router(voice.router, prefix=API_PREFIX)
 
     @app.exception_handler(Exception)

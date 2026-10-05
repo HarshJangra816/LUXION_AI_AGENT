@@ -23,7 +23,7 @@ from luxion.tools.permissions import AUTONOMY_MATRIX, PermissionEngine
 from luxion.tools.registry import ToolRegistry, build_registry
 from luxion.tools.router import select_tools
 
-NINE_INITIAL_TOOLS = {
+EXPECTED_BUILTIN_TOOLS = {
     "get_time",
     "get_date",
     "open_application",
@@ -33,13 +33,17 @@ NINE_INITIAL_TOOLS = {
     "system_stats",
     "read_file",
     "write_file",
+    # Phase 5b — PRD §33.14 "Remember that…" / "What did I tell you…" / "Forget…"
+    "remember",
+    "recall",
+    "forget",
 }
 
 
 # ------------------------------------------------------------------- registry
-def test_registry_ships_the_nine_initial_tools() -> None:
+def test_registry_ships_the_bundled_tools() -> None:
     registry = build_registry(get_settings())
-    assert set(registry.names()) == NINE_INITIAL_TOOLS
+    assert set(registry.names()) == EXPECTED_BUILTIN_TOOLS
     risks = {spec.name: spec.risk for spec in registry.specs()}
     # PRD §20 examples: get_time LOW, write_file MEDIUM; launch/kill are HIGH.
     assert risks["get_time"] == "low"
@@ -47,6 +51,10 @@ def test_registry_ships_the_nine_initial_tools() -> None:
     assert risks["open_application"] == "high"
     assert risks["close_application"] == "high"
     assert risks["take_screenshot"] == "low"
+    # Memory: reading is free, writing/deleting persistent data is medium.
+    assert risks["recall"] == "low"
+    assert risks["remember"] == "medium"
+    assert risks["forget"] == "medium"
 
 
 def test_every_tool_declares_a_json_schema() -> None:
@@ -352,7 +360,7 @@ def test_broken_plugin_is_skipped_not_fatal(tmp_path: Path) -> None:
     (plugin_dir / "broken.py").write_text("raise RuntimeError('nope')\n", encoding="utf-8")
     settings = Settings(app={"data_dir": tmp_path}, tools={"plugin_dirs": [plugin_dir]})
     registry = build_registry(settings)
-    assert set(registry.names()) == NINE_INITIAL_TOOLS
+    assert set(registry.names()) == EXPECTED_BUILTIN_TOOLS
 
 
 def test_tools_can_be_disabled_entirely(tmp_path: Path) -> None:

@@ -21,6 +21,9 @@ dependencies = [
     "sounddevice>=0.4.6",
     "faster-whisper>=1.0",
     "pyttsx3>=2.98",
+    # Memory + RAG (Phase 5): ONNX embeddings, SQLite vector + FTS5 search.
+    "fastembed>=0.8",
+    "sqlite-vec>=0.1.9",
 ]
 
 [project.optional-dependencies]

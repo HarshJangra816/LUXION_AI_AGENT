@@ -20,6 +20,8 @@ os.environ["LUXION_LOGGING__LEVEL"] = "WARNING"
 os.environ["LUXION_LLM__PROVIDER"] = "mock"
 os.environ["LUXION_LLM__MODEL"] = ""
 os.environ["LUXION_LLM__MOCK_DELAY_S"] = "0"
+# RAG tests must not download an embedding model.
+os.environ["LUXION_RAG__PROVIDER"] = "hash"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
