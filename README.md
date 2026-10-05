@@ -74,8 +74,8 @@ npm run lint                      # oxlint
 
 ## Current status
 
-**Phase 0–3 complete** (architecture, Luxion core + OpenRouter provider,
+**Phase 0–4 complete** (architecture, Luxion core + OpenRouter provider,
 context manager, tool framework: 9 built-in tools, autonomy matrix +
 per-tool overrides, confirmations, audit log, agent loop, Settings → Tools).
 See [memory.md](memory.md) for the phase log, decisions, and what's next
-(Phase 4: voice).
+(Phase 5: Memory).
