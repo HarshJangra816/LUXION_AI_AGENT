@@ -29,6 +29,8 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "remember",
         "recall",
         "forget",
+        # Phase 5c — repository intelligence
+        "search_code",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"

@@ -10,6 +10,7 @@ from luxion.tools.base import Tool
 from luxion.tools.builtin.apps import BUILTIN_TOOLS as _APPS
 from luxion.tools.builtin.files import BUILTIN_TOOLS as _FILES
 from luxion.tools.builtin.memories import BUILTIN_TOOLS as _MEMORIES
+from luxion.tools.builtin.repository import BUILTIN_TOOLS as _REPOSITORY
 from luxion.tools.builtin.screenshot import BUILTIN_TOOLS as _SCREENSHOT
 from luxion.tools.builtin.system import BUILTIN_TOOLS as _SYSTEM
 from luxion.tools.builtin.time_tools import BUILTIN_TOOLS as _TIME
@@ -23,6 +24,7 @@ BUILTIN_TOOLS: list[Tool] = [
     *_APPS,
     *_WEB,
     *_MEMORIES,
+    *_REPOSITORY,
 ]
 
 __all__ = ["BUILTIN_TOOLS"]

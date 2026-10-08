@@ -249,15 +249,19 @@ def chunk_code(
         if not block:
             cut = min(start + 1, total)
             block = lines[start:cut]
-        drafts.append(
-            ChunkDraft(
-                text="\n".join(block).strip("\n"),
-                start_line=start + 1,
-                end_line=cut,
-                kind=CODE_KIND,
-                language=language,
+        # A run of blank lines (the trailing newline of most files is one)
+        # yields no text to retrieve — and a blank chunk embeds to a zero
+        # vector, which the vector index scores *above* real matches.
+        if any(line.strip() for line in block):
+            drafts.append(
+                ChunkDraft(
+                    text="\n".join(block).strip("\n"),
+                    start_line=start + 1,
+                    end_line=cut,
+                    kind=CODE_KIND,
+                    language=language,
+                )
             )
-        )
         if cut >= total:
             break
         next_start = max(cut - line_overlap, start + 1)

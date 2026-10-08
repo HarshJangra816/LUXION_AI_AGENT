@@ -17,6 +17,7 @@ from luxion.api.routes import (
     health,
     llm,
     memory,
+    repository,
     tools,
     usage,
     voice,
@@ -25,6 +26,7 @@ from luxion.config.settings import get_settings
 from luxion.database.session import dispose_engine, init_db
 from luxion.llm.registry import aclose_provider
 from luxion.logging_setup import configure_logging
+from luxion.repository.indexer import schedule_index
 from luxion.voice.manager import close_voice_manager
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,9 @@ async def lifespan(app: FastAPI):
             "provider": settings.llm.provider,
         },
     )
+    if settings.rag.enabled and settings.rag.index_on_start:
+        # Optional: embedding a whole workspace on CPU is not done unasked.
+        schedule_index(settings=settings)
     try:
         yield
     finally:
@@ -79,6 +84,7 @@ def create_app() -> FastAPI:
     app.include_router(tools.router, prefix=API_PREFIX)
     app.include_router(capabilities.router, prefix=API_PREFIX)
     app.include_router(memory.router, prefix=API_PREFIX)
+    app.include_router(repository.router, prefix=API_PREFIX)
     app.include_router(voice.router, prefix=API_PREFIX)
 
     @app.exception_handler(Exception)

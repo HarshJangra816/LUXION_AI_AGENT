@@ -77,6 +77,7 @@ class OllamaProvider(LLMProvider):
             "model": model,
             "messages": [message.as_provider_payload() for message in messages],
             "stream": True,
+            "think": bool(self.config.think),
             "options": {
                 "temperature": self._temperature(temperature),
                 "num_predict": self._max_tokens(max_tokens),

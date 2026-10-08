@@ -65,6 +65,7 @@ def init_db() -> None:
     """
     settings = get_settings()
     settings.ensure_directories()
+    from luxion.memory import models as _memory_models  # noqa: F401 - register tables
     from luxion.rag import init_rag
     from luxion.rag import models as _rag_models  # noqa: F401 - register tables
 

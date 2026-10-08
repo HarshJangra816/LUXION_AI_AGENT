@@ -257,12 +257,19 @@ def write_chunks(
     """
     if len(chunks) != len(vectors):
         raise ValueError("chunks and vectors must align 1:1")
+    # A blank chunk can never match anything and embeds to a zero vector, which
+    # the vector index scores above genuine matches. Never store one.
+    aligned = [
+        (draft, vector)
+        for draft, vector in zip(chunks, vectors, strict=True)
+        if str(getattr(draft, "text", "")).strip()
+    ]
     delete_source(session, source)
-    if not chunks:
+    if not aligned:
         return 0
 
     rows: list[Chunk] = []
-    for draft, vector in zip(chunks, vectors, strict=True):
+    for draft, vector in aligned:
         blob = None if vector is None else np.asarray(vector, dtype=np.float32).reshape(-1)
         text_of = str(getattr(draft, "text", ""))
         rows.append(

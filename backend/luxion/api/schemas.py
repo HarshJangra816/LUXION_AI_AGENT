@@ -300,3 +300,74 @@ class MemorySearchOut(BaseModel):
     hits: list[MemoryOut] = []
     #: Prompt-ready ``- [kind] text`` block (PRD A58 context integration).
     preview: str = ""
+
+
+# ------------------------------------- repository (Phase 5c, PRD A16, A17 Repository Intelligence)
+class RepositoryHitOut(BaseModel):
+    """One retrieved chunk: file path + the lines it covers (PRD A17)."""
+
+    path: str
+    source_type: str = "code"
+    language: str = ""
+    start_line: int = 0
+    end_line: int = 0
+    score: float = 0.0
+    text: str
+
+
+class RepositoryFileOut(BaseModel):
+    """A hit grouped with its file — "start here" (PRD A17 relevant files)."""
+
+    path: str
+    source_type: str = "code"
+    language: str = ""
+    score: float = 0.0
+    range: str = ""
+    preview: str = ""
+
+
+class RepositoryStatusOut(BaseModel):
+    enabled: bool = True
+    #: Approved workspaces the indexer walks (PRD A42).
+    roots: list[str] = []
+    #: Distinct files currently in the index / total chunks.
+    files: int = 0
+    chunks: int = 0
+    extensions: list[str] = []
+    exclude: list[str] = []
+    index_on_start: bool = False
+
+
+class RepositoryIndexOut(BaseModel):
+    """Result of one sync pass."""
+
+    roots: list[str] = []
+    scanned: int = 0
+    indexed: int = 0
+    unchanged: int = 0
+    skipped: int = 0
+    failed: int = 0
+    removed: int = 0
+    written: int = 0
+    #: Index size *after* the pass.
+    chunks: int = 0
+    files: int = 0
+    changed: int = 0
+    indexed_at: str | None = None
+
+
+class RepositorySearchRequest(BaseModel):
+    query: str = Field(min_length=1, max_length=500)
+    k: int = Field(default=6, ge=1, le=50)
+    #: Cosine floor; unset falls back to ``rag.min_score`` (0.2 by default).
+    min_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    #: Group the hits into at most this many files (0 = flat list only).
+    files: int = Field(default=5, ge=0, le=50)
+
+
+class RepositorySearchOut(BaseModel):
+    query: str
+    hits: list[RepositoryHitOut] = []
+    files: list[RepositoryFileOut] = []
+    #: Prompt-ready ``- path:lines`` block (PRD A16 context integration).
+    preview: str = ""

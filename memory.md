@@ -10,14 +10,14 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 4 — Voice ✅ code + tests + **live API smoke** done (2026-10-05); only the browser eyeball remains |
-| **Next phase** | Phase 5 — Memory + RAG (after the Phase 4 eyeball) |
-| **Last updated** | 2026-10-05 |
-| **Backend tests** | 239 passing, `ruff check` + `ruff format --check` clean |
-| **Frontend build** | `tsc -b && vite build` OK, `oxlint` clean |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅** (repository index + retrieval, 54 tests, 2026-10-08); **5d 🟡 recon done, no code written** |
+| **Next phase** | Finish **Phase 5d** — Settings → Memory UI + context injection (then Phase 6) |
+| **Last updated** | 2026-10-08 (end of session) |
+| **Backend tests** | **406 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (124 files) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — no frontend change this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 5 commits; Phase 4 committed (`b3a798d` voice backend, `2a900c0` OmniVoice + voice UI); only `.gitmodules` untracked |
-| **Default adapter** | **Ollama** (was OpenRouter via `.env`) — switchable by tapping a card in Settings |
+| **Git** | 6 commits; Phase 5b + 5c + the qwen `think` fix + docs committed & pushed this session |
+| **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
 
 ---
@@ -598,6 +598,20 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 ## Open Items / Follow-ups
 
+- [ ] **`p-e-w/heretic` request (user, 2026-10-08)** — user asked to add
+  <https://github.com/p-e-w/heretic.git> "so I can get more answers and my AI
+  agent gets smarter". Facts established before deciding: Heretic performs
+  **directional ablation ("abliteration") on model weights** — it removes
+  refusal/safety alignment, it does **not** add knowledge or intelligence, and
+  published evaluations show a small *cost* (KL divergence from the original),
+  not a gain. It runs offline over HF/PyTorch weights (`pip install heretic-llm`,
+  20–30 min for a 4B model on an RTX 3090) — **not feasible on this CPU-only
+  box**, and unrelated to the Ollama/OpenAI-compatible API Luxion talks to. It is
+  **AGPL-3.0**, so copying its code into Luxion would re-license Luxion AGPL
+  (running it as an external process would not). **Awaiting the user's decision**
+  before any integration; the real intelligence gains are 5c/5d (RAG +
+  context injection), better prompting and the tool loop.
+
 - [x] **Phase 4 remaining — ALL DONE (2026-10-05)**: (1) `frontend/src/lib/voice.ts`
   types + fetchers + `useVoiceEvents`; (2) `MicIcon`/`MicOffIcon`; (3) Composer
   PTT + live-listen toggle; (4) `ChatPage` `/api/voice/events` → `command` →
@@ -635,9 +649,11 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 - [ ] **Rotate the OpenRouter key** — it was committed in source before being
   moved to `.env` (`sk-or-v1-6bdb…`). Rotate it on openrouter.ai; the key now
   lives only in the gitignored root `.env`.
-- [ ] Git: repo now has **5 commits** (… `b3a798d` Phase 4 voice backend,
-  `2a900c0` OmniVoice + voice UI + tests); only `.gitmodules` is untracked.
-  Nothing modified in the working tree — ask before committing the submodule.
+- [x] **Git — committed & pushed (2026-10-08)**: repo now has **6 commits**
+  (… `b3a798d` Phase 4 voice backend, `2a900c0` OmniVoice + voice UI + tests,
+  `45d851e` Phase 5 memory + RAG layer, plus this session's Phase 5b/5c +
+  `think` fix + docs commit). Working tree clean; no `.env`, no
+  `database/*.json` and no API key are tracked.
 - [ ] **No browser verification yet** — the backend is now proven **live over
   HTTP** (Phase 4 smoke on :8763, see *Phase 4 live smoke*), but no browser has
   rendered the app: ask the user to eyeball HUD labels clear of content, galaxy
@@ -657,6 +673,12 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   update any external docs/scripts using the old name.
 - [ ] Tauri tray / system tray integration not started (Phase 12 per PRD).
 - [ ] Starlette TestClient deprecation warning (`httpx` → `httpx2`) — ignore for now.
+- [ ] **Restart the backend** (`.\scripts\dev.ps1`, no `--reload`) so the new
+  `llm.think=false` → `{"think": false}` payload reaches Ollama; then eyeball a
+  chat turn — it should start streaming in ~2 s instead of hanging on
+  "streaming".
+- [ ] **Phase 5d still to do in full** — plan in *Phase 5d — started, paused*
+  below; no 5d code exists yet.
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -672,7 +694,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 3 | Tool Framework | ✅ done (2026-10-01) |
 | 3.5 | Capabilities & Consent | ✅ done (2026-10-02) — OS probe, app consents, calendar sources, executor hard gate, Settings card |
 | 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
-| 5 | Memory + RAG | ⬜ |
+| 5 | Memory + RAG | 🟡 **5a ✅** storage/index (2026-10-05), **5b ✅** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c ✅** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08); **5d 🟡 recon only** (see *Phase 5d — started* below) |
 | 6 | Browser Agent | ⬜ |
 | 7 | Computer Automation | ⬜ |
 | 8 | Coding Agent | ⬜ |
@@ -943,11 +965,10 @@ Memory UI + context injection.
 
 ---
 
-## Phase 5b — memory extraction + remember/recall/forget tools (2026-10-05, code done, tests pending)
+## Phase 5b — memory extraction + remember/recall/forget tools ✅ (2026-10-08)
 
-Milestone **5b** is implemented end to end; the suite is green but the
-memory-specific test files are **not written yet** (that is the first thing to
-do next session).
+Milestone **5b** is complete: code, wiring **and** the test files that were
+deferred at the end of the last session.
 
 **New files**
 
@@ -985,12 +1006,208 @@ router; `api/schemas.py` gained `MemoryCreate`/`MemoryOut`/`MemoryListOut`/
 from the 9 initial tools to the 12 bundled tools (memory tools added, plus
 risk asserts: `recall=low`, `remember=forget=medium`).
 
-**Gates:** backend `pytest` **269 passed**, `ruff check .` clean,
-`ruff format --check .` clean (110 files).
-
-**Still open:** `tests/test_memory_store.py` / `test_memory_recall.py` /
-`test_memory_tools.py` / `test_memory_extraction.py`; then 5c — repository
-indexing/retriever; then 5d — Settings → Memory UI + context injection.
-
 **Housekeeping:** `.gitmodules` (OmniVoice submodule, gitlink already tracked)
-committed in this batch → resolves OPEN ITEM 4.
+committed in the 5b batch → resolves OPEN ITEM 4.
+
+---
+
+## Phase 5b tests ✅ (2026-10-08) — 82 new tests, 269 → 351
+
+Five new files, all green:
+
+| File | Tests | Covers |
+|------|-------|--------|
+| `tests/test_memory_store.py` | 16 | `normalize_text` (whitespace / trailing punctuation / `MAX_TEXT` word-boundary cap), `memory_hash` case-insensitivity, `remember` → row + FTS/vec chunk, dedupe, empty + unknown-kind `ValueError`s, importance clamp, **`memory_max` ceiling** (filled for real — the field is validated `ge=10`), `get/list/count`, `forget` (row **and** chunk gone, unknown id → `False`), `clear_memories`, **keyword-only indexing when the embedding model is down**, re-index idempotency |
+| `tests/test_memory_recall.py` | 14 | exact-phrase hit, relevance ranking, `k`, blank query, unrelated query, **`kinds` filter** (needs both rows retrievable first), model-down → keyword path still answers, `min_score` gates only the *vector* side (exact identifiers survive `0.99`), `MemoryHit.as_dict`, `recent_memories` order/`kinds`, `format_memories` block + character budget + detached rows |
+| `tests/test_memory_tools.py` | 18 | `remember` (store / dupe / blank / bad kind → `ToolError memory_rejected` / importance clamp / default kind), `recall` (hits + prompt preview, `k` clamped 1..20, "No memories match", blank query), `forget` (by id, by query, no args, unknown id, unmatched query), **router** surfaces `recall`/`remember` for a memory question under `max_exposed=3`, spec/risk/read-only model, **executor deny at autonomy 0 stores nothing** + confirm/allow levels at autonomy 2 |
+| `tests/test_memory_extraction.py` | 18 | all 8 PRD §33.14 heuristics, user-turns-only, `MIN_TEXT`, `MAX_PER_PASS`, fenced/prose/junk JSON parsing (7 parametrised junk cases), unknown-kind + importance repair, whole-pass idempotency, marker written even when nothing is kept, `memory_extraction: False`, unknown conversation, **LLM candidates merged next to heuristics**, LLM-returns-`[]` fallback, `schedule_extraction` (no loop → `None`, in-loop → task, disabled → `None`) |
+| `tests/test_memory_api.py` | 16 | `GET /api/memory` (empty, total, `?kind` filter, 400 unknown kind), `POST` (201, dedupe on the same id, `importance` `ge/le` → 422, blank → 400, bad kind → 400), `POST /search` (ranked hits + `preview`, `kinds` filter, 400/422), `DELETE /{id}` (204/404), `DELETE` (clear-all count) |
+
+**Bugs / gotchas found while writing them**
+
+1. `Settings(rag={"memory_max": 1})` → **ValidationError**, `memory_max` is
+   `ge=10`; the ceiling test fills the store for real instead of mocking
+   `count_memories`.
+2. `from luxion.memory import recall` resolves to the **function**, not the
+   module (the package re-exports it) — monkeypatching needs
+   `importlib.import_module("luxion.memory.recall")`.
+3. `POST /api/memory` clamps nothing itself: `MemoryCreate.importance` is
+   `ge=0, le=1`, so out-of-range is a **422 from the schema**, not a store
+   clamp (the clamp only matters for the tool/LLM path).
+4. `init_db()` registered the RAG tables but **not** `memories` — it worked
+   only because `api/app.py` imports the memory router before the lifespan runs.
+   Added `from luxion.memory import models` next to the rag one in
+   `database/session.py::init_db`, so a standalone `init_db()` creates the table.
+
+**Gates:** backend `pytest` **351 passed**, `ruff check .` clean,
+`ruff format --check .` clean (115 files); frontend `npm run lint` clean and
+`npm run build` exit 0 (no frontend change this session).
+
+**Still open:** 5c — repository indexing/retriever; then 5d — Settings →
+Memory UI + context injection. Nothing committed yet.
+
+---
+
+## Phase 5c — repository indexing + retrieval ✅ (2026-10-08)
+
+The RAG layer can now walk the approved workspaces, chunk + embed + prune, and
+answer "where is X?" through both an HTTP API and a tool.
+
+**New package `backend/luxion/repository/`**
+
+| File | What it does |
+|------|--------------|
+| `scanner.py` | `REPO_SOURCE_TYPES = ("doc", "code")`, `normalize_extensions`, `is_excluded` (fnmatch per path part), `iter_files` (sorted `os.walk`, skips symlinks / oversized / missing roots, dedupes roots, stops at `max_files`) |
+| `indexer.py` | `IndexReport` (slots + `as_dict()`), `read_text` (NUL-byte ⇒ binary), `draft_hashes`/`stored_hashes`, `index_file → (INDEXED\|UNCHANGED\|SKIPPED\|FAILED, written)`, `_embed_drafts` (batched, all-`None` keyword fallback on `EmbeddingError`), `count_repo_chunks/files`, `prune_missing`, `sync_workspaces`, `sync_blocking`, `schedule_index` |
+| `retrieval.py` | `RepoHit` / `FileMatch`, `search_repository`, `files_relevant_to` (≤3 hits/file, ≤5 files), `format_repo_context` (prompt-ready `- path:1-3 [code]` block with a character budget), `relative_path` |
+| `__init__.py` | package docstring + exports |
+
+**Wired in:** `RAGConfig` gained `max_file_bytes` (512 KiB), `max_files` (5000),
+`index_on_start` (False); `tools/builtin/repository.py` adds the `search_code`
+builtin (risk `low`, read-only, category `repository`) — 13 builtins now;
+`api/routes/repository.py` adds `GET /api/repository`,
+`POST /api/repository/index`, `POST /api/repository/search`; schemas
+`RepositoryHitOut/FileOut/StatusOut/IndexOut/SearchRequest/SearchOut`;
+`app.py` includes the router and, only when `rag.index_on_start`, schedules one
+sync from the lifespan.
+
+### Phase 5c tests ✅ (2026-10-08) — 54 new tests, 351 → 405
+
+| File | Tests | Covers |
+|------|-------|--------|
+| `tests/test_repository_index.py` | 24 + 1 skip | `iter_files` (extensions, excludes, missing root, symlink skip, `max_files`, `max_bytes`, root dedupe), `read_text` (binary / oversized), `index_file` outcomes + `source_type`/`language`/line numbers, incremental re-run, `draft_hashes` vs `stored_hashes`, `prune_missing`, blank file → `SKIPPED`, `schedule_index` (no loop → `None`, in loop → task, disabled → `None`) |
+| `tests/test_repository_search.py` | 20 | exact-identifier retrieval, `k`, blank query, `min_score` floor, memory rows never surface, model-down → keyword path still answers, per-file grouping + hit cap, `format_repo_context` block / budget / matches-without-hits, `relative_path`, `search_code` (hits + line ranges, argument clamps, blank query, no-match copy, disabled RAG, spec/risk/read-only/required, router ranks it first, missing index, memory exclusion, disabled registry) |
+| `tests/test_repository_api.py` | 10 | status (enabled/roots/counts/extensions/`index_on_start`), index → reindex is incremental, roots + `indexed_at`, blank file skipped not failed, prune on file removal, search hits/files/preview, grouped vs flat, cosine floor, 422 validation, `rag.enabled=False` ⇒ a no-op pass |
+
+**Bugs / gotchas found while writing them**
+
+1. **Blank chunks outranked real hits.** `chunk_code` emitted a
+   `ChunkDraft(text="")` for the empty line a trailing newline creates; it
+   embeds to a **zero vector**, and `sqlite_vec` reports `distance=1.0` for that
+   (`_cosine` → 0.5), so the empty chunk scored **0.5 — above every real match,
+   for every query**. Fixed twice: `chunk_code` now skips a wholly-blank block,
+   and `write_chunks` refuses any blank-text draft. The old index test's
+   `max(end_line) == len(content.split("\n"))` expectation was wrong too (the
+   phantom line is now not indexed) — it asserts `len(content.splitlines())`.
+2. **`rag.min_score` was documented but never consulted.** `search_repository`
+   now takes `min_score=None` → `get_settings().rag.min_score` (0.2), and
+   `RepositorySearchRequest.min_score` defaults to `None` for the same reason.
+   Without a floor a nonsense query returns the whole index. Keyword hits
+   still bypass the floor, which is what keeps exact identifiers findable.
+   *(Note: `memory.recall` still defaults `min_score=0.0` and the memory search
+   schema hard-defaults to `0.0`, so `LUXION_RAG__MIN_SCORE` only affects the
+   repository path today — a candidate follow-up.)*
+3. `_clear_repo` must delete through `vector_store.delete_source` — a bare
+   `DELETE FROM chunks` leaves orphan `chunks_vec` rows, and SQLite reuses the
+   `rowid`, so the next write trips a UNIQUE constraint.
+4. `select_tools(query, registry, settings)` — the query is the **first**
+   positional arg (easy to get backwards; the test now also asserts
+   `search_code` ranks *first* for "where is the retry backoff handled?").
+5. `relative_path` is OS-native (`src\app.py` on Windows) — compare with
+   `Path(...)`, not a literal string.
+
+**Gates:** backend `pytest` **405 passed, 1 skipped**, `ruff check .` clean,
+`ruff format --check .` clean (124 files); frontend `npm run lint` clean and
+`npm run build` exit 0 (no frontend change); `cargo check` exit 0 (no Rust
+change).
+
+**Still open:** 5d — Settings → Memory UI + context injection (inject
+`format_repo_context` + `format_memories` into the system prompt). Committed
+to `main` in the same session.
+
+---
+
+## Phase 5d — started, paused (recon only) (2026-10-08)
+
+Session ended before any 5d code was written. **Recon is complete** — the
+files below were all read, so the next session can go straight to writing.
+
+**Planned backend A — context injection**
+
+- `luxion/context/knowledge.py` (new): `memory_context(session, settings, *,
+  query="")` → `recall(..., k=settings.rag.top_k, min_score=...)`, falling back
+  to `recent_memories(k=3)` when there is no query / no hits;
+  `repository_context(session, settings, *, query)` → `files_relevant_to` +
+  `format_repo_context`, skipped when `query` < 3 chars; `knowledge_context`
+  splits `settings.context.knowledge_max_chars` (half each when both are on).
+  Everything wrapped in try/except → `""` so a bad retrieval never kills a turn.
+- Headers: memory block, then repo block (`path:start-end`).
+- `config/settings.py`: `RAGConfig.inject_memory=True`,
+  `RAGConfig.inject_repository=True` (persisted via `rag.json`), and
+  `ContextConfig.knowledge_max_chars = 2400` (`ge=0, le=20_000`, env-only).
+- `llm/system_prompt.py`: `build_system_prompt(settings, tools=None, *,
+  knowledge="")` appends `Context retrieved for this turn:\n{block}` — and it
+  must still append **after** the custom-prompt early return, but only when
+  non-empty (keeps `tests/test_llm_providers.py:224` equality passing).
+- `services/chat.py`: `_PreparedTurn.knowledge`, built in `_prepare_turn`
+  (query = `user_text`), passed at the `build_system_prompt(cfg,
+  tool_specs or None, ...)` call (~line 266).
+- `services/usage.py`: query-less memory-only knowledge built in
+  `_load_conversation` → `build_system_prompt(settings, knowledge=...)`; watch
+  `tests/test_usage_api.py:100` (`first["context"] == second["context"]`) for
+  extraction-timing flakiness — drop knowledge from the preview if it flaps.
+
+**Planned backend B — Settings → Memory API**
+
+- `api/routes/memory.py`: `RAGConfigBundle` (`config`, `defaults`,
+  `needs_reembed`, chunk/vector counts, `embedding_models` from
+  `EMBEDDING_MODELS`) + `RAGConfigPatch` (`extra="forbid"`, mirrors
+  `RAGConfig`) as `GET/PUT/DELETE /memory/config` — declared **before** the
+  `@router.delete("/{memory_id}")` route. GET calls `vector_store.sync_meta`;
+  PUT/DELETE call `save_rag_overrides` + `reset_settings_cache` +
+  `reset_embedding_provider()`. Mirror `api/routes/voice.py`.
+
+**Planned frontend**
+
+- `frontend/src/lib/memory.ts` (types + API client) and
+  `features/settings/MemoryCard.tsx` (Row/Toggle pattern from
+  `VoiceCard.tsx`): memory list / kind filter / create / search / delete /
+  clear + RAG settings form + repo status / index / search + re-embed button.
+  Register in `SettingsPage.tsx` right after `<VoiceCard caps={caps} />`
+  (~line 1263).
+
+**Planned tests:** `tests/test_context_knowledge.py`,
+`tests/test_memory_config_api.py` (incl. a `RAGConfigPatch` ↔ `RAGConfig`
+field-sync assertion — mirror `tests/test_voice_api.py:214-216`).
+
+**Key files read this recon:** `config/settings.py` (ContextConfig 120,
+RAGConfig 354, `save_rag_overrides` 558, `EMBEDDING_MODELS` 244–290),
+`rag/vector_store.py` (`get_meta`/`sync_meta` 188–221), `rag/embeddings.py`,
+`memory/recall.py`, `repository/retrieval.py`, `llm/system_prompt.py`,
+`context/manager.py`, `services/chat.py`, `services/usage.py`,
+`api/routes/{voice,memory,llm}.py`, `tests/test_usage_api.py`.
+
+---
+
+## Session side-task — model switch + the qwen "not replying" bug (2026-10-08)
+
+**Switch.** `PUT /api/llm/provider` with `{"provider":"ollama","model":"qwen3.5:2b"}`
+persisted `database/llm_provider.json` →
+`{"active":"ollama","models":{"openrouter":"deepseek/deepseek-chat","ollama":"qwen3.5:2b"}}`.
+`.env` stays at `LUXION_LLM__MODEL=` (auto-detect). Ollama now only has
+`qwen3.5:2b`, `qwen3.5:0.8b`, `qwen3.5:4b` — `nemomix-local:latest` was
+**deleted from Ollama** (the running backend's `_models_cache` still listed it
+until the switch cleared it). Live turn verified `"model":"qwen3.5:2b"`.
+
+**Bug: the chat stopped replying.** qwen3.5 emits `message.thinking` and
+produces **no `content` until it is finished**; `OllamaProvider._read_ndjson`
+only yields deltas for non-empty `content` → **zero deltas** → UI stuck on
+"streaming" forever. Measured: default config = 60 s+ with no content at all;
+`think: false` = first content at **2 s**, 18.9 s total, 333 chars.
+
+**Fix (code written, gates green — backend NOT restarted yet):**
+
+- `config/settings.py` — new `LLMConfig.think: bool = False` (Ollama-only knob;
+  comment explains reasoning models stream nothing while thinking).
+- `llm/providers/ollama.py` — payload now sends `"think": bool(self.config.think)`.
+- `.env.example` — `LUXION_LLM__THINK=false` + comment.
+- `tests/test_llm_providers.py` — `_ollama_ok` asserts `payload["think"] is False`,
+  new `_ollama_done_line()` helper, new `test_ollama_forwards_the_think_switch`.
+
+> ⚠️ **Backend started by `scripts\dev.ps1` has no `--reload`** — kill the
+> `python -m luxion` process and start it again (or re-run `.\scripts\dev.ps1`)
+> before the `think` fix takes effect in the app. Chat endpoint is
+> `POST /api/conversations/{id}/messages` (SSE), not `/api/chat/stream`.
+
+**Gates:** `pytest` **406 passed, 1 skipped**, `ruff check .` clean,
+`ruff format --check .` clean (124 files).

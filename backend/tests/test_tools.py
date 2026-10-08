@@ -37,6 +37,8 @@ EXPECTED_BUILTIN_TOOLS = {
     "remember",
     "recall",
     "forget",
+    # Phase 5c — PRD §17 repository intelligence
+    "search_code",
 }
 
 
@@ -55,6 +57,8 @@ def test_registry_ships_the_bundled_tools() -> None:
     assert risks["recall"] == "low"
     assert risks["remember"] == "medium"
     assert risks["forget"] == "medium"
+    # Repository search only reads the index.
+    assert risks["search_code"] == "low"
 
 
 def test_every_tool_declares_a_json_schema() -> None:

@@ -106,6 +106,11 @@ class LLMConfig(BaseModel):
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(default=2048, ge=1)
     request_timeout_s: float = Field(default=120.0, gt=0)
+    #: Ollama only: let a reasoning model (qwen3.5 and friends) think first.
+    #: On they emit ``message.thinking`` and no content until they are done,
+    #: which reads as "not replying" for tens of seconds; off is the default
+    #: until the composer can render a thinking stream.
+    think: bool = False
     #: Overrides the built-in system prompt when non-empty.
     system_prompt: str = ""
     #: Artificial per-chunk delay for ``provider = "mock"`` (0 = instant).
@@ -375,6 +380,13 @@ class RAGConfig(BaseModel):
     index_extensions: list[str] = Field(default_factory=lambda: [*DEFAULT_INDEX_EXTENSIONS])
     #: Directory / file names skipped entirely (matched against any path part).
     exclude: list[str] = Field(default_factory=lambda: [*DEFAULT_EXCLUDE])
+    #: Largest single file the indexer opens; bigger files stay unindexed.
+    max_file_bytes: int = Field(default=512_000, ge=1024, le=20_000_000)
+    #: Files walked in one sync — bounds a first pass over a large workspace.
+    max_files: int = Field(default=5_000, ge=1, le=200_000)
+    #: Sync the repository as soon as the backend boots. Off by default:
+    #: embedding a whole workspace on CPU is not something to do unasked.
+    index_on_start: bool = False
     #: Embedding batch size for the re-embed job (CPU friendly).
     reembed_batch: int = Field(default=32, ge=1, le=512)
     #: Keep extracting durable facts from finished turns (PRD §15).

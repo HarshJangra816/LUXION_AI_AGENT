@@ -26,8 +26,15 @@ Luxion/
 ├── .opencode/skills/       # Agent skills (ui-ux-pro-max, …)
 ├── backend/                # Python API + agent core
 │   ├── luxion/             # app, config, database, logging, api
+│   │   ├── context/        # context assembly (tokens, budget, injection)
+│   │   ├── llm/            # provider adapters (ollama, openrouter, mock)
+│   │   ├── memory/         # memory store, extraction, recall
+│   │   ├── rag/            # chunking, embeddings, sqlite-vec store
+│   │   ├── repository/     # workspace scan, index, code retrieval
+│   │   ├── tools/          # tool framework + 13 builtins
+│   │   └── voice/          # mic, STT, TTS, wake word
 │   ├── alembic/            # migrations
-│   └── tests/              # pytest suite
+│   └── tests/              # pytest suite (406 tests)
 ├── frontend/               # React app + Tauri shell
 │   ├── src/                # UI (dashboard shell today)
 │   └── src-tauri/          # Tauri 2 (crate `luxion`)
@@ -63,9 +70,9 @@ Configuration lives in `.env` (copy from `.env.example`), all variables prefixed
 
 ```powershell
 cd backend
-.\.venv\Scripts\pytest.exe        # 17 tests
+.\.venv\Scripts\pytest.exe        # 406 tests (1 skipped)
 .\.venv\Scripts\ruff.exe check .  # lint
-.\.venv\Scripts\ruff.exe format .
+.\.venv\Scripts\ruff.exe format --check .
 
 cd ..\frontend
 npm run build                     # tsc + vite
@@ -74,8 +81,15 @@ npm run lint                      # oxlint
 
 ## Current status
 
-**Phase 0–4 complete** (architecture, Luxion core + OpenRouter provider,
-context manager, tool framework: 9 built-in tools, autonomy matrix +
-per-tool overrides, confirmations, audit log, agent loop, Settings → Tools).
-See [memory.md](memory.md) for the phase log, decisions, and what's next
-(Phase 5: Memory).
+**Phase 0–5c complete** — architecture; Luxion core + provider adapters
+(Ollama / OpenRouter, tap-to-switch, model pinning); context manager; tool
+framework with 13 built-ins + autonomy matrix, confirmations and audit log;
+capabilities & consent (OS probe, app consents, risk engine); voice
+(faster-whisper STT, pyttsx3/OmniVoice TTS, wake word, barge-in); memory store
++ RAG index + extraction + `remember`/`recall`/`forget`; repository indexing +
+`search_code` + `/api/repository`.
+
+**In progress: Phase 5d** — Settings → Memory UI + context injection
+(memory + repository context into the system prompt). See
+[memory.md](memory.md) for the phase log, the 5d plan, and what's next
+(Phase 6: browser agent).

@@ -40,22 +40,27 @@ def _provider(provider_type: type[LLMProvider], handler, **config) -> LLMProvide
 
 
 # --------------------------------------------------------------------- ollama
+def _ollama_done_line() -> str:
+    return json.dumps(
+        {
+            "message": {"role": "assistant", "content": ""},
+            "done": True,
+            "done_reason": "stop",
+            "prompt_eval_count": 4,
+            "eval_count": 2,
+        }
+    )
+
+
 def _ollama_ok(request: httpx.Request) -> httpx.Response:  # noqa: ARG001
     payload = json.loads(request.content)
     assert payload["stream"] is True
+    assert payload["think"] is False
     assert payload["messages"][0]["role"] == "user"
     lines = [
         json.dumps({"message": {"role": "assistant", "content": "Hel"}}),
         json.dumps({"message": {"role": "assistant", "content": "lo"}}),
-        json.dumps(
-            {
-                "message": {"role": "assistant", "content": ""},
-                "done": True,
-                "done_reason": "stop",
-                "prompt_eval_count": 4,
-                "eval_count": 2,
-            }
-        ),
+        _ollama_done_line(),
     ]
     return httpx.Response(200, text="\n".join(lines))
 
@@ -72,6 +77,19 @@ def test_ollama_streams_ndjson_deltas() -> None:
     assert done.usage is not None
     assert done.usage.prompt_tokens == 4
     assert done.usage.total_tokens == 6
+
+
+def test_ollama_forwards_the_think_switch() -> None:
+    """A reasoning model that is allowed to think is asked to do so."""
+    seen: list[bool] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(bool(json.loads(request.content)["think"]))
+        return httpx.Response(200, text=_ollama_done_line())
+
+    provider = _provider(OllamaProvider, handler, provider="ollama", think=True)
+    _events(provider)
+    assert seen == [True]
 
 
 def test_ollama_unknown_model_is_model_not_found() -> None:
