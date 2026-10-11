@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11 — uncommitted) |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`) |
 | **Next phase** | Phase 7 per `prd.md` (commit Phase 6 first) |
 | **Last updated** | 2026-10-11 (end of session) |
 | **Backend tests** | **484 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (135 files) |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/browser.ts` + `BrowserCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 7 commits; **Phase 6 is uncommitted** (10 modified + browser/wikipedia/youtube/routes/tests untracked + 2 frontend files); `frontend/src-tauri/Cargo.toml` also shows a harmless cargo-generated `features = []` line |
+| **Git** | 8 commits (Phase 6 as `9c240f9`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
 
@@ -695,10 +695,11 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 - [x] **Commit Phase 5d — done (2026-10-10)**: committed as `85ad17a`
   (Phase 5d context injection + Settings Memory UI) and `b065e4d` (sidebar
   Memory nav).
-- [ ] **Commit Phase 6** — all Phase 6 work is uncommitted (backend browser/
-  wikipedia/youtube tools + manager + routes + config, 3 new test files, 10
-  modified, `frontend/src/lib/browser.ts` + `BrowserCard.tsx` + SettingsPage
-  + icons.tsx, `.env.example`, memory.md).
+- [x] **Commit Phase 6 — done (2026-10-11)**: committed as `9c240f9` and
+  pushed. README later refreshed with logo, `docs/assets/` screenshots and a
+  22 s demo webm (regenerate with a Playwright script driving the running
+  app — two passes: stills at 2×, video at 1× with `scroll_into_view`, not
+  `wait_for`, which matches offscreen DOM).
 - [ ] **Root `.env` context-budget values look like typos** —
   `LUXION_CONTEXT__TOTAL_BUDGET_TOKENS=320000000` /
   `RESERVE_TOKENS=400000` (~10000× the intended 32000/4000). Tests are
@@ -725,7 +726,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 3.5 | Capabilities & Consent | ✅ done (2026-10-02) — OS probe, app consents, calendar sources, executor hard gate, Settings card |
 | 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
 | 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, committed `85ad17a`) |
-| 6 | Browser Agent | ✅ **done (2026-10-11, uncommitted)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
+| 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
 | 7 | Computer Automation | ⬜ |
 | 8 | Coding Agent | ⬜ |
 | 9 | Web Intelligence | ⬜ |
@@ -1252,7 +1253,7 @@ verification of the new card yet.
 
 ---
 
-## Phase 6 — Browser Agent ✅ (2026-10-11, uncommitted)
+## Phase 6 — Browser Agent ✅ (2026-10-11, committed `9c240f9`)
 
 **Delivered**
 
@@ -1308,7 +1309,7 @@ verification of the new card yet.
 
 **Gates:** backend `pytest` **484 passed, 1 skipped**, `ruff check .` clean,
 `ruff format --check .` clean (135 files); frontend `npm run lint` clean and
-`npm run build` exit 0. **Not committed** (see Open Items); the new card has
+`npm run build` exit 0. **Committed `9c240f9` + pushed.** The new card has
 not been eyeballed in a running UI yet.
 
 ---
