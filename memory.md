@@ -1197,6 +1197,12 @@ verified); this session added the tests, the frontend and the docs.
   Registered in `SettingsPage.tsx` right after `<VoiceCard caps={caps} />`.
 - `.env.example`: `LUXION_CONTEXT__KNOWLEDGE_MAX_CHARS=2400`,
   `LUXION_RAG__INJECT_MEMORY=true`, `LUXION_RAG__INJECT_REPOSITORY=true`.
+- **Follow-up fix (user report, same day)**: the sidebar **Memory** nav item
+  was still `ready: false` in `App.tsx` (a Phase 5 placeholder) — it now
+  routes to a new `features/memory/MemoryPage.tsx` that hosts the same
+  `<MemoryCard />` (`ready: true`, page meta added, dead `phase`-badge JSX
+  removed after it tripped a TS2322 on the narrowed union). The card also
+  still lives in Settings between Voice and Appearance.
 
 **Tests — 34 new, 406 → 440**
 

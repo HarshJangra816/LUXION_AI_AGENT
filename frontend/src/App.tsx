@@ -6,6 +6,7 @@ import { RefreshIcon } from './components/icons'
 import { StatusDot } from './components/StatusDot'
 import { ChatPage } from './features/chat/ChatPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
+import { MemoryPage } from './features/memory/MemoryPage'
 import { SettingsPage } from './features/settings/SettingsPage'
 import { fetchHealth, statusLabel, type BackendState } from './lib/api'
 import { useAIState } from './lib/aiState'
@@ -16,13 +17,14 @@ const AI3DCore = lazy(() => import('./components/three/AI3DCore'))
 const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', ready: true },
   { id: 'chat', label: 'Chat', ready: true },
-  { id: 'memory', label: 'Memory', ready: false, phase: 'Phase 5' },
+  { id: 'memory', label: 'Memory', ready: true },
   { id: 'settings', label: 'Settings', ready: true },
 ] as const
 
 const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'System health and quick actions' },
   chat: { title: 'Chat', subtitle: 'Phase 1 - streaming conversation' },
+  memory: { title: 'Memory', subtitle: 'Phase 5 - retrieval, settings and knowledge' },
   settings: { title: 'Settings', subtitle: 'Phase 1 - AI provider and graphics' },
 }
 
@@ -129,11 +131,6 @@ function Shell() {
                 }`}
               >
                 <span>{item.label}</span>
-                {'phase' in item && item.phase ? (
-                  <span className="rounded border border-white/10 px-1.5 py-0.5 font-mono text-[10px] text-muted/70">
-                    {item.phase}
-                  </span>
-                ) : null}
               </button>
             )
           })}
@@ -207,6 +204,10 @@ function Shell() {
         {activeNav === 'chat' ? (
           <div className="flex min-h-0 flex-1 flex-col">
             <ChatPage initialDraft={pendingDraft} />
+          </div>
+        ) : activeNav === 'memory' ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <MemoryPage />
           </div>
         ) : activeNav === 'settings' ? (
           <div className="min-h-0 flex-1 overflow-y-auto">
