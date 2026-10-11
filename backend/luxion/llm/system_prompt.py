@@ -53,11 +53,19 @@ def _tool_guide(tools: Sequence[ToolSpec]) -> str:
     return "\n".join(lines)
 
 
-def build_system_prompt(settings: Settings, tools: Sequence[ToolSpec] | None = None) -> str:
+def build_system_prompt(
+    settings: Settings,
+    tools: Sequence[ToolSpec] | None = None,
+    *,
+    knowledge: str = "",
+) -> str:
     """Resolve the system message for this build.
 
     ``tools`` is the tool set exposed for the *current* request — passing it
     switches the prompt from "you have no tools" to the tool guide.
+    ``knowledge`` is the retrieved-knowledge block for this turn (memories +
+    relevant files, Phase 5d); it is appended only when non-empty, and never
+    overrides a custom ``llm.system_prompt``.
     """
     if custom := settings.llm.system_prompt.strip():
         return custom
@@ -66,4 +74,6 @@ def build_system_prompt(settings: Settings, tools: Sequence[ToolSpec] | None = N
     prompt = body.format(autonomy=settings.security.autonomy_level)
     if tools is not None:
         prompt += _tool_guide(tools)
+    if block := knowledge.strip():
+        prompt += f"\n\nContext retrieved for this turn:\n{block}"
     return prompt + f"\nCurrent UTC time: {now.strftime('%Y-%m-%d %H:%M:%S')}\n"

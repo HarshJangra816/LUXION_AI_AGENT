@@ -24,6 +24,7 @@ from luxion.context import (
     state_from_meta,
 )
 from luxion.context.budget import ContextBudget
+from luxion.context.knowledge import knowledge_context
 from luxion.database.models import Conversation, Message
 from luxion.database.session import get_session_factory
 from luxion.llm.system_prompt import build_system_prompt
@@ -218,7 +219,7 @@ def usage_report(db: Session, settings: Settings, *, recent_limit: int = 20) -> 
 
 def _load_conversation(
     conversation_id: str, settings: Settings
-) -> tuple[str | None, list[HistoryRecord], SummaryState, TokenTotals]:
+) -> tuple[str | None, list[HistoryRecord], SummaryState, TokenTotals, str]:
     with get_session_factory()() as session:
         conversation = session.get(Conversation, conversation_id)
         if conversation is None:
@@ -236,18 +237,21 @@ def _load_conversation(
             tokens_out=sum(message.tokens_out or 0 for message in stored),
             cost_usd=round(sum(_cost_of(message.meta) for message in stored), 6),
         )
-        return conversation.title, records, state_from_meta(conversation.meta), totals
+        # Query-less: the preview shows the memory half of the knowledge block
+        # (a repository half needs the next question, which does not exist yet).
+        knowledge = knowledge_context(session, settings, query="")
+        return conversation.title, records, state_from_meta(conversation.meta), totals, knowledge
 
 
 async def conversation_context(
     conversation_id: str, settings: Settings
 ) -> ConversationContextReport:
     """Preview the prompt that the next turn would send (no side effects)."""
-    title, records, summary, totals = await run_in_threadpool(
+    title, records, summary, totals, knowledge = await run_in_threadpool(
         _load_conversation, conversation_id, settings
     )
     built = await build_context(
-        system_prompt=build_system_prompt(settings),
+        system_prompt=build_system_prompt(settings, knowledge=knowledge),
         records=records,
         summary=summary,
         settings=settings,

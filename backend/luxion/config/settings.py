@@ -136,6 +136,9 @@ class ContextConfig(BaseModel):
     summary_max_tokens: int = Field(default=1_200, ge=200)
     #: Triggers summarization once this many uncovered messages pile up.
     summary_min_messages: int = Field(default=4, ge=1)
+    #: Character allowance for the retrieved-knowledge block appended to the
+    #: system prompt (memories + repository files, Phase 5d). 0 = never inject.
+    knowledge_max_chars: int = Field(default=2400, ge=0, le=20_000)
 
 
 class SecurityConfig(BaseModel):
@@ -394,6 +397,10 @@ class RAGConfig(BaseModel):
     #: Ceiling on stored memories — the conversation itself is never stored
     #: (PRD §58 rule 5), and this bounds what a long-lived install accumulates.
     memory_max: int = Field(default=500, ge=10, le=100_000)
+    #: Inject recalled memories into every chat turn's system prompt (5d).
+    inject_memory: bool = True
+    #: Inject the files relevant to the question into the system prompt (5d).
+    inject_repository: bool = True
 
     @field_validator("index_extensions", mode="before")
     @classmethod

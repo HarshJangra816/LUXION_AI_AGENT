@@ -37,6 +37,7 @@ from luxion.context import (
     SummaryState,
     build_context,
 )
+from luxion.context.knowledge import knowledge_context
 from luxion.database.session import get_session_factory
 from luxion.llm.base import LLMProvider
 from luxion.llm.errors import LLMError
@@ -124,6 +125,8 @@ class _PreparedTurn:
     records: list[HistoryRecord]
     summary: SummaryState
     title: str | None
+    #: Retrieved knowledge (memories + relevant files) for the system prompt.
+    knowledge: str = ""
 
 
 _locks: dict[str, asyncio.Lock] = {}
@@ -153,6 +156,7 @@ def _prepare_turn(conversation_id: str, user_text: str, settings: Settings) -> _
             records=records,
             summary=read_summary_state(conversation),
             title=conversation.title,
+            knowledge=knowledge_context(session, settings, query=user_text),
         )
 
 
@@ -263,7 +267,9 @@ async def stream_reply(
 
             for round_index in range(rounds):
                 built = await build_context(
-                    system_prompt=build_system_prompt(cfg, tool_specs or None),
+                    system_prompt=build_system_prompt(
+                        cfg, tool_specs or None, knowledge=prepared.knowledge
+                    ),
                     records=prepared.records,
                     summary=summary,
                     settings=cfg,

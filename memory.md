@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅** (repository index + retrieval, 54 tests, 2026-10-08); **5d 🟡 recon done, no code written** |
-| **Next phase** | Finish **Phase 5d** — Settings → Memory UI + context injection (then Phase 6) |
-| **Last updated** | 2026-10-08 (end of session) |
-| **Backend tests** | **406 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (124 files) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — no frontend change this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅** (repository index + retrieval, 54 tests, 2026-10-08); **5d ✅** (Settings → Memory UI + context injection, 34 tests, 2026-10-10 — **uncommitted**) |
+| **Next phase** | Phase 6 — Browser Agent (commit 5d first) |
+| **Last updated** | 2026-10-10 (end of session) |
+| **Backend tests** | **440 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (127 files) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/memory.ts` + `MemoryCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 6 commits; Phase 5b + 5c + the qwen `think` fix + docs committed & pushed this session |
+| **Git** | 6 commits; **Phase 5d is uncommitted** (5 modified + knowledge.py/tests untracked + 3 frontend files + .env.example + memory.md); `frontend/src-tauri/Cargo.toml` also shows a harmless cargo-generated `features = []` line |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
 
@@ -654,13 +654,28 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   `45d851e` Phase 5 memory + RAG layer, plus this session's Phase 5b/5c +
   `think` fix + docs commit). Working tree clean; no `.env`, no
   `database/*.json` and no API key are tracked.
+- [ ] **Re-embed job (follow-up from 5d, deferred by user)** — the embedding
+  model can be switched from Settings and `needs_reembed` warns that stored
+  vectors belong to the old model, but nothing re-embeds them yet
+  (`rebuild_vector_index` only refills vec0 from stored blobs; a real job would
+  re-embed chunk text in `rag.reembed_batch` batches, then rebuild + `sync_meta`).
+  Until it exists: switch model → keyword-only retrieval for old chunks; the
+  workaround is re-running *Index files* after clearing the index, plus
+  `DELETE /memory` (memories re-index on next extraction).
+- [ ] **Eyeball Settings → Memory & knowledge** (5d): memories list with kind
+  chips, add form, search shows scores, clear-all works; toggles + numeric
+  rows Save to `rag.json` and "Reset to .env" clears it; embedding-model
+  switch shows the amber "re-embed needed" chip; Index-now updates the counts;
+  repo preview search returns path:line hits. In chat, a question about a
+  project file should get the injected knowledge block (check
+  `GET /api/usage/{id}` context preview).
 - [ ] **No browser verification yet** — the backend is now proven **live over
   HTTP** (Phase 4 smoke on :8763, see *Phase 4 live smoke*), but no browser has
   rendered the app: ask the user to eyeball HUD labels clear of content, galaxy
   in the blank areas, logo readable, **(Phase 3)** chat tool chips + Allow/Deny
   card + Settings → Tools, **(Phase 3.5)** Permissions & capabilities card,
   **(Settings)** adapter cards, **(Phase 4)** Composer mic/PTT + Settings →
-  Voice. `vite preview`/headless smoke still aborts (SIGABRT) in this
+  Voice, **(Phase 5d)** Settings → Memory & knowledge. `vite preview`/headless smoke still aborts (SIGABRT) in this
   environment, so only `pytest`, `ruff`, `oxlint`, `tsc`/`vite` + the HTTP smoke
   count as evidence.
 - [ ] Phase 3 tools that need a live machine check: `take_screenshot`
@@ -677,8 +692,12 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   `llm.think=false` → `{"think": false}` payload reaches Ollama; then eyeball a
   chat turn — it should start streaming in ~2 s instead of hanging on
   "streaming".
-- [ ] **Phase 5d still to do in full** — plan in *Phase 5d — started, paused*
-  below; no 5d code exists yet.
+- [ ] **Commit Phase 5d** — all 5d work is uncommitted (backend knowledge.py +
+  settings/system_prompt/chat/usage/memory-route changes, 2 new test files,
+  `frontend/src/lib/memory.ts`, `MemoryCard.tsx`, SettingsPage registration,
+  `.env.example`, memory.md). `frontend/src-tauri/Cargo.toml` has a harmless
+  cargo-generated `features = []` line — include or revert it, but do not lose
+  the 5d work.
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -694,7 +713,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 3 | Tool Framework | ✅ done (2026-10-01) |
 | 3.5 | Capabilities & Consent | ✅ done (2026-10-02) — OS probe, app consents, calendar sources, executor hard gate, Settings card |
 | 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
-| 5 | Memory + RAG | 🟡 **5a ✅** storage/index (2026-10-05), **5b ✅** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c ✅** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08); **5d 🟡 recon only** (see *Phase 5d — started* below) |
+| 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, uncommitted) |
 | 6 | Browser Agent | ⬜ |
 | 7 | Computer Automation | ⬜ |
 | 8 | Coding Agent | ⬜ |
@@ -1117,65 +1136,102 @@ to `main` in the same session.
 
 ---
 
-## Phase 5d — started, paused (recon only) (2026-10-08)
+## Phase 5d — Settings → Memory UI + context injection ✅ (2026-10-10, uncommitted)
 
-Session ended before any 5d code was written. **Recon is complete** — the
-files below were all read, so the next session can go straight to writing.
+Milestone **5d** completes Phase 5: retrieved knowledge now reaches the system
+prompt every chat turn, and Settings → Memory manages it. Code was written in
+an earlier interrupted session (backend A/B already in the working tree,
+verified); this session added the tests, the frontend and the docs.
 
-**Planned backend A — context injection**
+**Delivered — backend A (context injection)**
 
 - `luxion/context/knowledge.py` (new): `memory_context(session, settings, *,
-  query="")` → `recall(..., k=settings.rag.top_k, min_score=...)`, falling back
-  to `recent_memories(k=3)` when there is no query / no hits;
-  `repository_context(session, settings, *, query)` → `files_relevant_to` +
-  `format_repo_context`, skipped when `query` < 3 chars; `knowledge_context`
-  splits `settings.context.knowledge_max_chars` (half each when both are on).
-  Everything wrapped in try/except → `""` so a bad retrieval never kills a turn.
-- Headers: memory block, then repo block (`path:start-end`).
-- `config/settings.py`: `RAGConfig.inject_memory=True`,
-  `RAGConfig.inject_repository=True` (persisted via `rag.json`), and
-  `ContextConfig.knowledge_max_chars = 2400` (`ge=0, le=20_000`, env-only).
+  query="")` — `recall(k=settings.rag.top_k)` with `recent_memories(k=3)`
+  fallback when there is no query / no hits; `repository_context(session,
+  settings, *, query)` — `files_relevant_to` + `format_repo_context`, skipped
+  when `query < MIN_REPO_QUERY_CHARS (3)`; `knowledge_context` splits
+  `settings.context.knowledge_max_chars` (half each when both streams are on).
+  Everything wrapped in `try/except → ""` — a bad retrieval never kills a turn.
+- Settings: `ContextConfig.knowledge_max_chars = 2400` (env-only),
+  `RAGConfig.inject_memory=True`, `RAGConfig.inject_repository=True` (persisted
+  via `rag.json`).
 - `llm/system_prompt.py`: `build_system_prompt(settings, tools=None, *,
-  knowledge="")` appends `Context retrieved for this turn:\n{block}` — and it
-  must still append **after** the custom-prompt early return, but only when
-  non-empty (keeps `tests/test_llm_providers.py:224` equality passing).
+  knowledge="")` — appends `Context retrieved for this turn:\n{block}` only
+  when non-empty; a custom `LUXION_LLM__SYSTEM_PROMPT` still returns **verbatim**
+  (knowledge is not appended to it — keep `tests/test_llm_providers.py`
+  equality passing).
 - `services/chat.py`: `_PreparedTurn.knowledge`, built in `_prepare_turn`
-  (query = `user_text`), passed at the `build_system_prompt(cfg,
-  tool_specs or None, ...)` call (~line 266).
-- `services/usage.py`: query-less memory-only knowledge built in
-  `_load_conversation` → `build_system_prompt(settings, knowledge=...)`; watch
-  `tests/test_usage_api.py:100` (`first["context"] == second["context"]`) for
-  extraction-timing flakiness — drop knowledge from the preview if it flaps.
+  (query = user text), passed to `build_system_prompt`.
+- `services/usage.py`: query-less knowledge (memory recents only, no repo) in
+  `_load_conversation` → the Settings → Context usage preview shows the same
+  system prompt the next turn would send.
 
-**Planned backend B — Settings → Memory API**
+**Delivered — backend B (`/memory/config`)**
 
 - `api/routes/memory.py`: `RAGConfigBundle` (`config`, `defaults`,
-  `needs_reembed`, chunk/vector counts, `embedding_models` from
-  `EMBEDDING_MODELS`) + `RAGConfigPatch` (`extra="forbid"`, mirrors
-  `RAGConfig`) as `GET/PUT/DELETE /memory/config` — declared **before** the
-  `@router.delete("/{memory_id}")` route. GET calls `vector_store.sync_meta`;
-  PUT/DELETE call `save_rag_overrides` + `reset_settings_cache` +
-  `reset_embedding_provider()`. Mirror `api/routes/voice.py`.
+  `needs_reembed`, `chunks`, `vectors`, `embedding_models` from
+  `EMBEDDING_MODELS`) + `RAGConfigPatch` (`extra="forbid"`, mirrors every
+  `RAGConfig` field, all optional) as `GET/PUT/DELETE /memory/config` —
+  declared **before** `@router.delete("/{memory_id}")` (a param route
+  registered earlier would swallow `/memory/config` and 422 on the `config`
+  string). GET runs `vector_store.sync_meta`; PUT/DELETE run
+  `save_rag_overrides` + `reset_settings_cache` + `reset_embedding_provider()`
+  (a new model only takes effect once the cached provider is dropped).
 
-**Planned frontend**
+**Delivered — frontend**
 
-- `frontend/src/lib/memory.ts` (types + API client) and
-  `features/settings/MemoryCard.tsx` (Row/Toggle pattern from
-  `VoiceCard.tsx`): memory list / kind filter / create / search / delete /
-  clear + RAG settings form + repo status / index / search + re-embed button.
-  Register in `SettingsPage.tsx` right after `<VoiceCard caps={caps} />`
-  (~line 1263).
+- `frontend/src/lib/memory.ts` (new): types (`Memory`, `RagConfig`,
+  `MemoryConfigBundle`, `EmbeddingModelSpec`, `RepositoryStatus`/`Hit`/`Search…`)
+  + fetchers for memory CRUD/search, `/memory/config` bundle/patch/reset and
+  `/repository` status/index/search. `MEMORY_KINDS` exported as the shared
+  constant.
+- `frontend/src/features/settings/MemoryCard.tsx` (new, VoiceCard pattern):
+  stored memories list (kind chips, per-row forget) + kind filter + add form +
+  search with scores + clear-all; context-injection toggles (inject memories /
+  repository / extraction, memory ceiling); retrieval form (enabled, embedding
+  model dropdown with dim/size/languages hint, top-k, min-score, chunk size /
+  overlap) + **amber "re-embed needed" warning chip** (no button — the job
+  does not exist, see follow-up); repository panel (roots/extensions, chunk +
+  file counts, Index-now button with report line, retrieval preview search);
+  Save / Discard / "Reset to .env" footer (edits persist to `rag.json`).
+  Registered in `SettingsPage.tsx` right after `<VoiceCard caps={caps} />`.
+- `.env.example`: `LUXION_CONTEXT__KNOWLEDGE_MAX_CHARS=2400`,
+  `LUXION_RAG__INJECT_MEMORY=true`, `LUXION_RAG__INJECT_REPOSITORY=true`.
 
-**Planned tests:** `tests/test_context_knowledge.py`,
-`tests/test_memory_config_api.py` (incl. a `RAGConfigPatch` ↔ `RAGConfig`
-field-sync assertion — mirror `tests/test_voice_api.py:214-216`).
+**Tests — 34 new, 406 → 440**
 
-**Key files read this recon:** `config/settings.py` (ContextConfig 120,
-RAGConfig 354, `save_rag_overrides` 558, `EMBEDDING_MODELS` 244–290),
-`rag/vector_store.py` (`get_meta`/`sync_meta` 188–221), `rag/embeddings.py`,
-`memory/recall.py`, `repository/retrieval.py`, `llm/system_prompt.py`,
-`context/manager.py`, `services/chat.py`, `services/usage.py`,
-`api/routes/{voice,memory,llm}.py`, `tests/test_usage_api.py`.
+| File | Tests | Covers |
+|------|-------|--------|
+| `tests/test_context_knowledge.py` | 22 | memory block (query hits, recents fallback, `max_chars`, inject/rag gates, retrieval exception → `""`), repo block (short-query skip, gates), `knowledge_context` ordering + budget split, `build_system_prompt` append / blank-ignored / custom-prompt-verbatim, e2e `stream_reply` through a recording fake provider asserting the system message carries the knowledge block |
+| `tests/test_memory_config_api.py` | 12 | bundle shape + defaults + model catalogue, `RAGConfigPatch` ↔ `RAGConfig` field-sync (mirror of the voice test), PUT merges into `rag.json` + survives reload, empty patch → 400, unknown key → 422, out-of-range value **silently dropped** (overlay contract), DELETE restores env-aware defaults, route ordering vs `/{memory_id}` (`/memory/config` never 422s), model swap keeps chunks and sets `needs_reembed` |
+
+**Gotchas found while writing the tests**
+
+1. **The suite's RAG provider is `hash`** (`conftest.py` sets
+   `LUXION_RAG__PROVIDER=hash`), so `test_config_reset_restores_the_defaults`
+   must compare against `Settings().rag.model_dump()` — a bare
+   `RAGConfig().model_dump()` fails on `provider: hash != fastembed`.
+2. **The e2e recorder needs a text delta.** A fake provider that emits only
+   `StreamDone` makes `stream_reply` end with `empty_response` (nothing to
+   persist) — the system prompt is never observable. Yield one `StreamDelta`
+   before the done event.
+3. **Invalid overlay values are silently dropped, not rejected** — that is the
+   established `rag.json` contract (`_valid_rag_values`), so a PUT with
+   `top_k: 0` returns 200 with the field unchanged; the "invalid value" test
+   asserts the drop, not a 422. (`RAGConfigPatch` itself 422s only on *unknown
+   keys* — `extra="forbid"`.)
+4. **`importlib.import_module` for monkeypatching** — `from luxion.context
+   import knowledge` binds the functions, so `monkeypatch.setattr(knowledge_mod,
+   "recall", …)` needs the module object, same trap as 5b gotcha #2.
+5. **No re-embed job exists** (`rag.reembed_batch` is only the indexing batch
+   size); per user decision the UI shows `needs_reembed` as a warning chip
+   only. Follow-up in Open Items.
+
+**Gates:** backend `pytest` **440 passed, 1 skipped**, `ruff check .` clean,
+`ruff format --check .` clean (127 files); frontend `npm run lint` clean and
+`npm run build` (`tsc -b && vite build`) exit 0 — only the pre-existing 888 kB
+AI3DCore chunk warning. **Not committed** (see Open Items); no browser
+verification of the new card yet.
 
 ---
 
