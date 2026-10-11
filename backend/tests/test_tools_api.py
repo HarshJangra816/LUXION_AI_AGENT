@@ -31,6 +31,20 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "forget",
         # Phase 5c — repository intelligence
         "search_code",
+        # Phase 6 — browser agent + Wikipedia + YouTube
+        "browser_open",
+        "browser_search",
+        "browser_click",
+        "browser_type",
+        "browser_extract",
+        "browser_download",
+        "browser_upload",
+        "browser_close",
+        "wikipedia_search",
+        "wikipedia_article",
+        "youtube_search",
+        "youtube_open",
+        "youtube_control",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"

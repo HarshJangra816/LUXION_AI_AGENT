@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 
 from luxion import __version__
 from luxion.api.routes import (
+    browser,
     capabilities,
     conversations,
     health,
@@ -22,6 +23,7 @@ from luxion.api.routes import (
     usage,
     voice,
 )
+from luxion.browser.manager import close_browser_manager
 from luxion.config.settings import get_settings
 from luxion.database.session import dispose_engine, init_db
 from luxion.llm.registry import aclose_provider
@@ -53,6 +55,7 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        await close_browser_manager()
         close_voice_manager()
         await aclose_provider()
         dispose_engine()
@@ -86,6 +89,7 @@ def create_app() -> FastAPI:
     app.include_router(memory.router, prefix=API_PREFIX)
     app.include_router(repository.router, prefix=API_PREFIX)
     app.include_router(voice.router, prefix=API_PREFIX)
+    app.include_router(browser.router, prefix=API_PREFIX)
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

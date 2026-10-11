@@ -16,6 +16,9 @@ Values come from (in increasing priority):
 6. The RAG edits saved from the Settings → Memory page
    (``<data_dir>/rag.json`` — partial overlay, see
    :func:`apply_rag_overrides`)
+7. The browser edits saved from the Settings → Browser page
+   (``<data_dir>/browser.json`` — partial overlay, see
+   :func:`apply_browser_overrides`)
 
 No secrets are ever hardcoded here. API keys are referenced either
 directly through a secret-typed setting or via an environment variable
@@ -31,7 +34,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from luxion.config import rag_override
+from luxion.config import browser_override, rag_override
 from luxion.config.provider_override import load_selection
 from luxion.config.voice_override import load_overrides, save_overrides
 
@@ -439,6 +442,60 @@ def _valid_rag_values(values: dict[str, object]) -> dict[str, object]:
     return accepted
 
 
+class BrowserConfig(BaseModel):
+    """Browser agent policy (PRD §5.7, §33.6-8, Phase 6).
+
+    The manager (:mod:`luxion.browser.manager`) launches one Playwright
+    Chromium on first use; these knobs shape that session and the tools that
+    drive it. ``enabled=False`` makes every ``browser_*`` / ``youtube_*`` tool
+    fail with a clear "browser automation is disabled" error instead of
+    launching anything.
+    """
+
+    #: Master switch — off means no Playwright launch and the tools error out.
+    enabled: bool = True
+    #: Run without a visible window. Off = the user can watch what the agent
+    #: does (useful while debugging a flow, noisy otherwise).
+    headless: bool = True
+    #: Default search engine for ``browser_search``.
+    search_engine: Literal["duckduckgo", "google", "bing"] = "duckduckgo"
+    #: Per-navigation / page-load budget.
+    navigation_timeout_s: float = Field(default=20.0, gt=0, le=120)
+    #: Per-action budget (click, type, extract).
+    action_timeout_s: float = Field(default=10.0, gt=0, le=60)
+    #: Characters of page text ``browser_extract`` returns (keeps prompts sane).
+    extract_max_chars: int = Field(default=8000, ge=500, le=100_000)
+    #: Spoofed user agent; empty = Playwright's Chromium default.
+    user_agent: str = ""
+    #: Where ``browser_download`` saves files. Empty = ``<data_dir>/downloads``.
+    download_dir: Path | None = None
+
+    @field_validator("download_dir", mode="before")
+    @classmethod
+    def _empty_is_none(cls, value: object) -> object:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+
+def _valid_browser_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`BrowserConfig` field.
+
+    A hand-edited ``browser.json`` must never take the app down; unknown keys
+    and values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in BrowserConfig.model_fields:
+            continue
+        try:
+            BrowserConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 def _valid_voice_values(values: dict[str, object]) -> dict[str, object]:
     """Drop anything that is not a real :class:`VoiceConfig` field with a sane type.
 
@@ -475,6 +532,7 @@ class Settings(BaseSettings):
     tools: ToolsConfig = ToolsConfig()
     voice: VoiceConfig = VoiceConfig()
     rag: RAGConfig = RAGConfig()
+    browser: BrowserConfig = BrowserConfig()
     logging: LoggingConfig = LoggingConfig()
 
     @property
@@ -583,6 +641,34 @@ def save_rag_overrides(settings: Settings, values: dict[str, object]) -> None:
     reset_settings_cache()
 
 
+def apply_browser_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Browser edits onto ``settings.browser``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/browser.json`` wins
+    over ``LUXION_BROWSER__*`` exactly like the voice and RAG overlays.
+    """
+    values = _valid_browser_values(browser_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.browser = BrowserConfig(**{**settings.browser.model_dump(), **values})
+
+
+def save_browser_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial browser overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_browser_values(values)
+    if valid:
+        browser_override.save_overrides(
+            settings.app.data_dir,
+            {**browser_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
@@ -590,6 +676,7 @@ def get_settings() -> Settings:
     apply_provider_selection(settings)
     apply_voice_overrides(settings)
     apply_rag_overrides(settings)
+    apply_browser_overrides(settings)
     return settings
 
 

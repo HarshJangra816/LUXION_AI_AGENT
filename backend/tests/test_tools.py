@@ -39,6 +39,20 @@ EXPECTED_BUILTIN_TOOLS = {
     "forget",
     # Phase 5c — PRD §17 repository intelligence
     "search_code",
+    # Phase 6 — PRD §5.7 / §33.6-8 browser agent + Wikipedia + YouTube
+    "browser_open",
+    "browser_search",
+    "browser_click",
+    "browser_type",
+    "browser_extract",
+    "browser_download",
+    "browser_upload",
+    "browser_close",
+    "wikipedia_search",
+    "wikipedia_article",
+    "youtube_search",
+    "youtube_open",
+    "youtube_control",
 }
 
 
@@ -59,6 +73,22 @@ def test_registry_ships_the_bundled_tools() -> None:
     assert risks["forget"] == "medium"
     # Repository search only reads the index.
     assert risks["search_code"] == "low"
+    # Browser: navigation/interaction can change remote state (MEDIUM, like
+    # open_url); search/extract only read (LOW).
+    assert risks["browser_open"] == "medium"
+    assert risks["browser_click"] == "medium"
+    assert risks["browser_type"] == "medium"
+    assert risks["browser_download"] == "medium"
+    assert risks["browser_upload"] == "medium"
+    assert risks["browser_search"] == "low"
+    assert risks["browser_extract"] == "low"
+    assert risks["browser_close"] == "low"
+    # Wikipedia is pure HTTP reads; YouTube control is MEDIUM (drives playback).
+    assert risks["wikipedia_search"] == "low"
+    assert risks["wikipedia_article"] == "low"
+    assert risks["youtube_search"] == "low"
+    assert risks["youtube_open"] == "medium"
+    assert risks["youtube_control"] == "medium"
 
 
 def test_every_tool_declares_a_json_schema() -> None:
@@ -312,7 +342,8 @@ def test_router_exposes_everything_under_the_cap() -> None:
     settings = get_settings()
     registry = build_registry(settings)
     selected = select_tools("open the weather", registry, settings)
-    assert len(selected) == len(registry)
+    # With more builtins than the cap, the router fills up to max_exposed.
+    assert len(selected) == min(len(registry), settings.tools.max_exposed)
 
 
 def test_router_respects_max_exposed(tmp_path: Path) -> None:

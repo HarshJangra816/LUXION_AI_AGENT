@@ -24,6 +24,10 @@ dependencies = [
     # Memory + RAG (Phase 5): ONNX embeddings, SQLite vector + FTS5 search.
     "fastembed>=0.8",
     "sqlite-vec>=0.1.9",
+    # Browser agent (Phase 6): Playwright drives Chromium for the browser_*,
+    # youtube_* tools. Run `python -m playwright install chromium` once after
+    # install; the manager degrades to a clear ToolError until then.
+    "playwright>=1.40",
 ]
 
 [project.optional-dependencies]

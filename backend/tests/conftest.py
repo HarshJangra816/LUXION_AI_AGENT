@@ -22,6 +22,10 @@ os.environ["LUXION_LLM__MODEL"] = ""
 os.environ["LUXION_LLM__MOCK_DELAY_S"] = "0"
 # RAG tests must not download an embedding model.
 os.environ["LUXION_RAG__PROVIDER"] = "hash"
+# The root .env may carry a dev budget (320M); the context tests assert the
+# shipped defaults, so pin them here regardless of any local .env.
+os.environ["LUXION_CONTEXT__TOTAL_BUDGET_TOKENS"] = "32000"
+os.environ["LUXION_CONTEXT__RESERVE_TOKENS"] = "4000"
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

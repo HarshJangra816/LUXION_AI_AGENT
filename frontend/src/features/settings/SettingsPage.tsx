@@ -50,6 +50,7 @@ import {
   type SizeId,
 } from '../../lib/appearance'
 import { useAIState } from '../../lib/aiState'
+import { BrowserCard } from './BrowserCard'
 import { MemoryCard } from './MemoryCard'
 import { VoiceCard } from './VoiceCard'
 import { MAX_BRIGHTNESS, MIN_BRIGHTNESS, useGraphics, type Quality } from '../../lib/graphics'
@@ -1264,6 +1265,8 @@ export function SettingsPage() {
       <VoiceCard caps={caps} />
 
       <MemoryCard />
+
+      <BrowserCard />
 
       <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
         <div className="flex items-center gap-2">

@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅** (repository index + retrieval, 54 tests, 2026-10-08); **5d ✅** (Settings → Memory UI + context injection, 34 tests, 2026-10-10 — **uncommitted**) |
-| **Next phase** | Phase 6 — Browser Agent (commit 5d first) |
-| **Last updated** | 2026-10-10 (end of session) |
-| **Backend tests** | **440 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (127 files) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/memory.ts` + `MemoryCard.tsx` added this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11 — uncommitted) |
+| **Next phase** | Phase 7 per `prd.md` (commit Phase 6 first) |
+| **Last updated** | 2026-10-11 (end of session) |
+| **Backend tests** | **484 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (135 files) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/browser.ts` + `BrowserCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 6 commits; **Phase 5d is uncommitted** (5 modified + knowledge.py/tests untracked + 3 frontend files + .env.example + memory.md); `frontend/src-tauri/Cargo.toml` also shows a harmless cargo-generated `features = []` line |
+| **Git** | 7 commits; **Phase 6 is uncommitted** (10 modified + browser/wikipedia/youtube/routes/tests untracked + 2 frontend files); `frontend/src-tauri/Cargo.toml` also shows a harmless cargo-generated `features = []` line |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
 
@@ -692,12 +692,23 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   `llm.think=false` → `{"think": false}` payload reaches Ollama; then eyeball a
   chat turn — it should start streaming in ~2 s instead of hanging on
   "streaming".
-- [ ] **Commit Phase 5d** — all 5d work is uncommitted (backend knowledge.py +
-  settings/system_prompt/chat/usage/memory-route changes, 2 new test files,
-  `frontend/src/lib/memory.ts`, `MemoryCard.tsx`, SettingsPage registration,
-  `.env.example`, memory.md). `frontend/src-tauri/Cargo.toml` has a harmless
-  cargo-generated `features = []` line — include or revert it, but do not lose
-  the 5d work.
+- [x] **Commit Phase 5d — done (2026-10-10)**: committed as `85ad17a`
+  (Phase 5d context injection + Settings Memory UI) and `b065e4d` (sidebar
+  Memory nav).
+- [ ] **Commit Phase 6** — all Phase 6 work is uncommitted (backend browser/
+  wikipedia/youtube tools + manager + routes + config, 3 new test files, 10
+  modified, `frontend/src/lib/browser.ts` + `BrowserCard.tsx` + SettingsPage
+  + icons.tsx, `.env.example`, memory.md).
+- [ ] **Root `.env` context-budget values look like typos** —
+  `LUXION_CONTEXT__TOTAL_BUDGET_TOKENS=320000000` /
+  `RESERVE_TOKENS=400000` (~10000× the intended 32000/4000). Tests are
+  insulated via `conftest.py` pins, but a live backend reading this `.env`
+  would allow unbounded prompt assembly. **Confirm with the user** whether
+  to correct the `.env`.
+- [ ] **Eyeball Settings → Browser card** — run `.\scripts\dev.ps1`, open
+  Settings, confirm the card renders after Memory, toggles persist, and a
+  chat turn can drive `browser_open`/`youtube_search` (Chromium is installed
+  at `%LOCALAPPDATA%\ms-playwright`).
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -713,8 +724,8 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 3 | Tool Framework | ✅ done (2026-10-01) |
 | 3.5 | Capabilities & Consent | ✅ done (2026-10-02) — OS probe, app consents, calendar sources, executor hard gate, Settings card |
 | 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
-| 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, uncommitted) |
-| 6 | Browser Agent | ⬜ |
+| 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, committed `85ad17a`) |
+| 6 | Browser Agent | ✅ **done (2026-10-11, uncommitted)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
 | 7 | Computer Automation | ⬜ |
 | 8 | Coding Agent | ⬜ |
 | 9 | Web Intelligence | ⬜ |
@@ -1238,6 +1249,67 @@ verified); this session added the tests, the frontend and the docs.
 `npm run build` (`tsc -b && vite build`) exit 0 — only the pre-existing 888 kB
 AI3DCore chunk warning. **Not committed** (see Open Items); no browser
 verification of the new card yet.
+
+---
+
+## Phase 6 — Browser Agent ✅ (2026-10-11, uncommitted)
+
+**Delivered**
+
+- **Dependency**: `playwright>=1.40` in `backend/pyproject.toml`; 1.63.0 +
+  Chromium installed; verified real headless launch (`title-test: ok`).
+- **`luxion/browser/manager.py`** — `BrowserManager` singleton (async-lock lazy
+  launch, injectable `launcher` seam so tests never launch a real browser),
+  `BrowserSession` (idempotent close), `playwright_launcher` (lazy import →
+  clear install-message errors), `get/set/reset/close_browser_manager`.
+- **`luxion/config/settings.py`** — `BrowserConfig` (enabled, headless,
+  search_engine `duckduckgo|google|bing`, navigation_timeout_s=20,
+  action_timeout_s=10, extract_max_chars=8000, user_agent, download_dir) +
+  `browser.json` overlay (`config/browser_override.py`, same contract as
+  `rag.json`: invalid/unknown values silently dropped, PUT 422 only on unknown
+  keys via `extra="forbid"`).
+- **13 new builtin tools** (registry now ships **26**):
+  `browser_open/search/click/type/extract/download/upload/close` (§33.6),
+  `youtube_search/open/control` (§33.7 — DOM eval + shared JS snippets),
+  `wikipedia_search/article` (§33.8 — pure httpx against MediaWiki REST, works
+  with browser disabled). Risk levels: browser open/click/type/download/upload +
+  youtube_open/control = **medium**, everything else **low/read_only** — no new
+  capability added (gated by the risk engine like `open_url`). `browser_*`/
+  `youtube_*` raise `ToolError("browser automation is disabled …")` when
+  `browser.enabled=false`; wikipedia is ungated.
+- **`api/routes/browser.py`** — `GET /api/browser` (effective config + defaults
+  + live session status), `PUT|DELETE /api/browser/config`; lifespan closes the
+  manager in `finally`.
+- **Frontend** — `lib/browser.ts` (types + fetchers) + `BrowserCard.tsx`
+  (enable/headless toggles, engine select, timeouts, extract limit, session
+  status chip with current URL, Save/Discard/Reset-to-.env) wired after
+  `<MemoryCard />` in `SettingsPage.tsx`; new `GlobeIcon`.
+- **Tests** — 44 new (`test_browser_tools.py`, `test_youtube_wikipedia.py`,
+  `test_browser_api.py`) using `FakePage`/`FakeContext`/`FakeBrowser`/`FakePlaywright`
+  + `set_browser_launcher` seam; tool-count/risk asserts updated; router-cap
+  test now `min(len(registry), max_exposed)` (26 builtins > default 16 exposed).
+
+**Gotchas**
+
+1. **Root `.env` had context-budget typos** — `TOTAL_BUDGET_TOKENS=320000000`
+   and `RESERVE_TOKENS=400000` (~10000× the 32000/4000 defaults) broke 3
+   pre-existing tests on any tree. Fixed hermetically by pinning
+   `LUXION_CONTEXT__TOTAL_BUDGET_TOKENS=32000` / `RESERVE_TOKENS=4000` in
+   `tests/conftest.py`. The root `.env` still holds the odd values —
+   **flagged for the user, left unchanged**.
+2. **Sibling test imports use the bare module name** —
+   `from test_browser_tools import FakePage, make_fake_session` (tests/ is not
+   a package).
+3. **`oxlint` `set-state-in-effect`** — a `void load(signal)` inside
+   `useEffect` is flagged even when every `await` precedes the setState;
+   MemoryCard is exempt only because its `load` never touches `setLoading` at
+   the top. Fix: `.then/.catch/.finally` promise chain in the effect, keep the
+   `useCallback` for the Refresh button.
+
+**Gates:** backend `pytest` **484 passed, 1 skipped**, `ruff check .` clean,
+`ruff format --check .` clean (135 files); frontend `npm run lint` clean and
+`npm run build` exit 0. **Not committed** (see Open Items); the new card has
+not been eyeballed in a running UI yet.
 
 ---
 
