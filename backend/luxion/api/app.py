@@ -14,6 +14,7 @@ from luxion import __version__
 from luxion.api.routes import (
     browser,
     capabilities,
+    code,
     conversations,
     desktop,
     health,
@@ -92,6 +93,7 @@ def create_app() -> FastAPI:
     app.include_router(voice.router, prefix=API_PREFIX)
     app.include_router(browser.router, prefix=API_PREFIX)
     app.include_router(desktop.router, prefix=API_PREFIX)
+    app.include_router(code.router, prefix=API_PREFIX)
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

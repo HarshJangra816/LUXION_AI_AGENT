@@ -71,6 +71,7 @@ def test_registry_is_well_formed() -> None:
         "screen_capture",
         "notifications",
         "input_control",
+        "terminal",
         "calendar",
     ]
     for cap in CAPABILITIES:
@@ -201,7 +202,7 @@ def test_capability_allows_when_granted(settings: Settings, store: CapabilitySto
 
 
 def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
-    """Exactly the screen and input tools are gated behind a capability.
+    """Exactly the screen, input and terminal tools are gated behind a capability.
 
     Everything else runs on autonomy alone, so a capability toggle can never
     silently widen what a tool is allowed to do.
@@ -217,6 +218,14 @@ def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
         "press_keys": "input_control",
         "type_text": "input_control",
         "click_at": "input_control",
+        "run_command": "terminal",
+        "run_tests": "terminal",
+        "install_dependencies": "terminal",
+        "git_status": "terminal",
+        "git_diff": "terminal",
+        "git_commit": "terminal",
+        "git_clone": "terminal",
+        "github_prs": "terminal",
     }
 
 

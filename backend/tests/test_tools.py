@@ -64,6 +64,18 @@ EXPECTED_BUILTIN_TOOLS = {
     "click_at",
     "control_volume",
     "control_brightness",
+    # Phase 8 — PRD §34/§35 coding agent (analysis, grep, edit, terminal, git, github)
+    "analyze_project",
+    "grep_code",
+    "edit_file",
+    "run_command",
+    "run_tests",
+    "install_dependencies",
+    "git_status",
+    "git_diff",
+    "git_commit",
+    "git_clone",
+    "github_prs",
 }
 
 

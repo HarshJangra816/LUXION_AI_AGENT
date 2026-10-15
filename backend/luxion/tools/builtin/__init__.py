@@ -9,6 +9,7 @@ from __future__ import annotations
 from luxion.tools.base import Tool
 from luxion.tools.builtin.apps import BUILTIN_TOOLS as _APPS
 from luxion.tools.builtin.browser import BUILTIN_TOOLS as _BROWSER
+from luxion.tools.builtin.code import BUILTIN_TOOLS as _CODE
 from luxion.tools.builtin.desktop import BUILTIN_TOOLS as _DESKTOP
 from luxion.tools.builtin.files import BUILTIN_TOOLS as _FILES
 from luxion.tools.builtin.memories import BUILTIN_TOOLS as _MEMORIES
@@ -33,6 +34,7 @@ BUILTIN_TOOLS: list[Tool] = [
     *_YOUTUBE,
     *_MEMORIES,
     *_REPOSITORY,
+    *_CODE,
 ]
 
 __all__ = ["BUILTIN_TOOLS"]

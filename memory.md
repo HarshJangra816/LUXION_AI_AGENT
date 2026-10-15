@@ -10,15 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15) |
-| **Next phase** | Phase 8 per `prd.md` (Coding Agent) |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15); **Phase 8 — Coding Agent ✅** (2026-10-15) |
+| **Next phase** | Phase 9 per `prd.md` (Web Intelligence) |
 | **Last updated** | 2026-10-15 (end of session) |
-| **Backend tests** | **510 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (149 files) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/desktop.ts` + `DesktopCard.tsx` added this session |
+| **Backend tests** | **559 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (159 files) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/code.ts` + `CodeCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 13 commits (Phase 7 as `e528940`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | 14 commits (Phase 7 as `e528940`, Phase 8 this session); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
-| **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7). |
+| **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh). Keep new phases on this diet. |
 
 ---
 
@@ -548,6 +549,10 @@ holds 8756 — restart `scripts/dev.ps1`).
   PowerShell — it corrupted JSX before (`<` → `d`). Use the edit/write tools
   or a literal `.Replace()` in a script file.
 - **Secrets**: `opencode.json` (21st.dev MCP key) is gitignored. Never commit keys.
+- **FOSS-first** (user, 2026-10-15): prefer free/open-source like OpenCode —
+  stdlib and FOSS CLIs over new package dependencies wherever possible.
+  Phase 8 added **zero** Python deps on this rule (stdlib + the user's own
+  `git`/`gh`); keep new phases on this diet and justify any new dep.
 - **Permission model (4 layers)**: OS privacy gates (probed **read-only**,
   Luxion only opens `ms-settings:`) → app consents
   (`<data_dir>/capabilities.json`) → account sources (calendar registry) →
@@ -676,7 +681,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   card + Settings → Tools, **(Phase 3.5)** Permissions & capabilities card,
   **(Settings)** adapter cards, **(Phase 4)** Composer mic/PTT + Settings →
   Voice, **(Phase 5d)** Settings → Memory & knowledge, **(Phase 6)** Browser
-  card, **(Phase 7)** Desktop card. `vite preview`/headless smoke still aborts (SIGABRT) in this
+  card, **(Phase 7)** Desktop card, **(Phase 8)** Coding card. `vite preview`/headless smoke still aborts (SIGABRT) in this
   environment, so only `pytest`, `ruff`, `oxlint`, `tsc`/`vite` + the HTTP smoke
   count as evidence.
 - [ ] Phase 3 tools that need a live machine check: `take_screenshot`
@@ -719,6 +724,17 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   status chips (platform / UIA / window count / `input_control`) are live, and
   a chat turn can drive `list_applications` / `type_text` (Notepad test:
   "type hello in notepad").
+- [ ] **Eyeball Settings → Coding card** (Phase 8) — run `.\scripts\dev.ps1`,
+  open Settings, confirm the card renders after Desktop, git/gh chips are
+  green, toggles persist, and the **Terminal consent** line reads "not
+  allowed" until you grant **Terminal** in Permissions & capabilities. Then in
+  chat: "analyze this project" → `analyze_project` reports python/node;
+  "grep for get_settings" → hits; after granting Terminal: "run the backend
+  tests" → `run_tests` streams pytest output.
+- [ ] **Grant the `terminal` capability once** (Phase 8) — it ships **OFF**
+  (running commands needs consent, PRD §39); the chat tools explain where to
+  grant it, but nothing that executes works until you flip it in Settings →
+  Permissions & capabilities.
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -737,7 +753,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, committed `85ad17a`) |
 | 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
 | 7 | Computer Automation | ✅ **done (2026-10-15, committed `e528940`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
-| 8 | Coding Agent | ⬜ |
+| 8 | Coding Agent | ✅ **done (2026-10-15)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
 | 9 | Web Intelligence | ⬜ |
 | 10 | Communication | ⬜ |
 | 11 | Vision + Hardware | ⬜ |
@@ -1392,6 +1408,87 @@ registry/capability/tool-api tests updated for 36 tools + 8 capabilities.
 `oxlint src` / `npm run build` all clean. `/api/desktop` GET/PUT/DELETE
 verified live via TestClient. The Desktop card has not been eyeballed in a
 running UI yet.
+
+---
+
+## Phase 8 — Coding Agent ✅ (2026-10-15)
+
+PRD §34/§35 + §32 (Tools → Terminal/Git) — repository analysis, grep, surgical
+editing, a sandboxed terminal, git and GitHub. Milestone *"Fix this project."*
+proven live (see below). **Zero new Python dependencies** (user's FOSS-first
+rule): stdlib `subprocess`/`re`/`json`/`tomllib` + the user's own `git` and
+optional `gh` CLIs.
+
+**Delivered — backend**
+
+- **`luxion/coding/` package**:
+  - `analyzer.py` — `analyze_project()`: markers (pyproject/package.json/
+    Cargo.toml/go.mod/… → 12 types), language mix (suffix counts, pruned
+    walk), package manager (lockfile-aware: uv/poetry/pipenv/pip,
+    pnpm/yarn/bun/npm…), detected test/build/lint/run commands, entry points,
+    source dirs, and **nested-project discovery** for monorepo roots (Luxion's
+    own root has no marker — `backend/pyproject.toml` + `frontend/package.json`
+    one level down; reporting "not a repository" there was wrong).
+  - `search.py` — grep: literal or regex, `include` glob, binary/NUL sniffing,
+    1 MB file cap, 200-hit cap, skips `.git`/`node_modules`/build dirs.
+  - `terminal.py` — the shell runner: workspace cwd, scrubbed env (no
+    `*key*/*token*/*secret*/*password*` vars reach a child — PRD §57 rule 6),
+    output clip, timeout that kills the **process tree** (`taskkill /T` on
+    Windows), stdin DEVNULL (no accidental hangs), and a **catastrophic-command
+    backstop** (`rm -rf /`, `mkfs`, `diskpart`, `reg delete`, fork bomb, …)
+    refused outright — a backstop *under* the risk engine, not instead of it.
+  - `gitops.py` — git status/diff/log/commit/clone via the git CLI (so the
+    user's own identity/credential helper/GPG signing just works), `gh pr
+    list` via the GitHub CLI with a clear "install gh" error when absent.
+    Commits never push; clone refuses existing destinations and non-URLs.
+- **11 tools** in `tools/builtin/code.py` (registry now **47**):
+  `analyze_project`/`grep_code`/`git_status`/`git_diff`/`github_prs` =
+  **low+read-only**; `edit_file` = **medium** (exact old→new, refuses 0 or >1
+  matches unless `replace_all`, so a stale edit never silently no-ops);
+  `run_command`/`run_tests`/`install_dependencies`/`git_commit`/`git_clone` =
+  **high**. The 8 process-spawning tools declare `requires="terminal"`.
+- **`terminal` capability** (`security/capabilities.py`, 9th entry, kind `app`,
+  **default OFF**) — grant in Settings → Permissions; hard-blocks the whole
+  execution family regardless of autonomy (§39).
+- **`CodeConfig`** (enabled, command_timeout_s ≤900, max_output_chars) +
+  `code.json` overlay (`config/code_override.py`) + `/api/code` routes
+  (GET/PUT/DELETE; status reports git/gh availability, workspace, terminal
+  capability — no `supported` flag, the tools are cross-platform by design).
+
+**Delivered — frontend**
+
+- `lib/code.ts` + `CodeCard.tsx` (enable toggle, timeout, output limit, git/gh
+  chips, project-root line, terminal-consent readout pointing at the
+  Permissions card, Save/Discard/Reset-to-.env) after `<DesktopCard />`;
+  reused the existing `TerminalIcon` (Phase 3).
+
+**Tests**: 49 new (`test_code_tools.py` 41 + `test_code_api.py` 8) — hermetic
+(tmp_path fixtures, scratch git repos, PATH-pinned venv for `python -m
+pytest`); registry/capability/tool-api sets updated (47 tools, 9
+capabilities). **559 passed, 1 skipped.**
+
+**Milestone proven live** (`%TEMP%` scratch project, tools driven exactly as
+the agent loop would): analyze → grep (`def add` at app/math.py:1) → red
+`run_tests` (`assert -1 == 5`) → `edit_file` fix (`a - b` → `a + b`) → green
+`run_tests` (`1 passed`) → `git_status` → `git_commit`. Also live: `/api/code`
+GET/PUT/merge/drop-invalid/422/DELETE via TestClient; child-env scrubbing
+proven by canary (`LUXION_TEST_FAKE_API_KEY` never reaches `os.environ` of the
+child; `LUXION_TEST_HARMLESS` does).
+
+**Gotchas**
+
+1. **`_SECRET_PATTERN` must not contain bare `auth`** — it scrubbed
+   `GIT_AUTHOR_*`/`GIT_COMMITTER_*` and broke every commit whose identity
+   comes from env. Now anchored: `(^|_)auth$|authorization|api_?key|…`.
+2. `python -m pytest` uses whatever `python` is on PATH — outside an
+   activated venv that is the system interpreter (often no pytest). The
+   *detected* command stays honest; tests pin the venv onto PATH.
+3. Duplicate `TerminalIcon` in `icons.tsx` — one already existed from Phase 3
+   (tool execution chips); reuse it, don't re-add.
+
+**Gates:** backend `pytest` **559 passed, 1 skipped**, `ruff check .` clean,
+`ruff format --check .` clean (159 files); frontend `tsc -b` exit 0,
+`oxlint` clean, `npm run build` OK (pre-existing chunk-size warning only).
 
 ---
 

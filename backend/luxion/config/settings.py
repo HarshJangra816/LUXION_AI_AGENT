@@ -37,7 +37,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from luxion.config import browser_override, desktop_override, rag_override
+from luxion.config import browser_override, code_override, desktop_override, rag_override
 from luxion.config.provider_override import load_selection
 from luxion.config.voice_override import load_overrides, save_overrides
 
@@ -524,6 +524,42 @@ class DesktopConfig(BaseModel):
     focus_delay_s: float = Field(default=0.25, ge=0.0, le=3.0)
 
 
+class CodeConfig(BaseModel):
+    """Coding-agent policy (PRD §34, §35, §32 Tools → Terminal/Git, Phase 8).
+
+    The ``code`` tool family reads these knobs. ``enabled`` is the master
+    switch — off means the analysis/grep/edit/git tools refuse to run and the
+    model is told where to turn them back on. The ``terminal`` **capability**
+    (Settings → Permissions) is a separate, independent gate on top: this
+    config is policy, that one is consent.
+    """
+
+    #: Master switch — off means every code tool errors out.
+    enabled: bool = True
+    #: Wall-clock limit for one command (tests, installs, git).
+    command_timeout_s: float = Field(default=120.0, gt=0, le=900.0)
+    #: stdout+stderr handed back to the model per command (the rest is clipped).
+    max_output_chars: int = Field(default=20_000, ge=1_000, le=200_000)
+
+
+def _valid_code_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`CodeConfig` field.
+
+    A hand-edited ``code.json`` must never take the app down; unknown keys
+    and values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in CodeConfig.model_fields:
+            continue
+        try:
+            CodeConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 def _valid_desktop_values(values: dict[str, object]) -> dict[str, object]:
     """Drop anything that is not a real :class:`DesktopConfig` field.
 
@@ -580,6 +616,7 @@ class Settings(BaseSettings):
     rag: RAGConfig = RAGConfig()
     browser: BrowserConfig = BrowserConfig()
     desktop: DesktopConfig = DesktopConfig()
+    code: CodeConfig = CodeConfig()
     logging: LoggingConfig = LoggingConfig()
 
     @property
@@ -744,6 +781,34 @@ def save_desktop_overrides(settings: Settings, values: dict[str, object]) -> Non
     reset_settings_cache()
 
 
+def apply_code_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Coding edits onto ``settings.code``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/code.json`` wins
+    over ``LUXION_CODE__*`` exactly like the other overlays.
+    """
+    values = _valid_code_values(code_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.code = CodeConfig(**{**settings.code.model_dump(), **values})
+
+
+def save_code_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial coding overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_code_values(values)
+    if valid:
+        code_override.save_overrides(
+            settings.app.data_dir,
+            {**code_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
@@ -753,6 +818,7 @@ def get_settings() -> Settings:
     apply_rag_overrides(settings)
     apply_browser_overrides(settings)
     apply_desktop_overrides(settings)
+    apply_code_overrides(settings)
     return settings
 
 

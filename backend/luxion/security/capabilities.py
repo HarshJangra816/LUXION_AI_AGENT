@@ -145,6 +145,14 @@ CAPABILITIES: tuple[Capability, ...] = (
         default=True,
     ),
     Capability(
+        "terminal",
+        "Terminal",
+        "app",
+        "Consent",
+        "Let the coding agent run commands, tests and dependency installs on this machine.",
+        default=False,
+    ),
+    Capability(
         "calendar",
         "Calendar",
         "account",

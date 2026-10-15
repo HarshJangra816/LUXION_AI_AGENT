@@ -56,6 +56,18 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "click_at",
         "control_volume",
         "control_brightness",
+        # Phase 8 — coding agent
+        "analyze_project",
+        "grep_code",
+        "edit_file",
+        "run_command",
+        "run_tests",
+        "install_dependencies",
+        "git_status",
+        "git_diff",
+        "git_commit",
+        "git_clone",
+        "github_prs",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"
