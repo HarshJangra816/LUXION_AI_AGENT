@@ -19,6 +19,9 @@ Values come from (in increasing priority):
 7. The browser edits saved from the Settings → Browser page
    (``<data_dir>/browser.json`` — partial overlay, see
    :func:`apply_browser_overrides`)
+8. The desktop-automation edits saved from the Settings → Desktop page
+   (``<data_dir>/desktop.json`` — partial overlay, see
+   :func:`apply_desktop_overrides`)
 
 No secrets are ever hardcoded here. API keys are referenced either
 directly through a secret-typed setting or via an environment variable
@@ -34,7 +37,7 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from luxion.config import browser_override, rag_override
+from luxion.config import browser_override, desktop_override, rag_override
 from luxion.config.provider_override import load_selection
 from luxion.config.voice_override import load_overrides, save_overrides
 
@@ -496,6 +499,49 @@ def _valid_browser_values(values: dict[str, object]) -> dict[str, object]:
     return accepted
 
 
+class DesktopConfig(BaseModel):
+    """Computer-automation policy (PRD §5.8, §33.5, §39, Phase 7).
+
+    The ``desktop_*`` tool family reads these knobs. ``enabled`` is the
+    master switch (application control, UI Automation, input injection and
+    the volume/brightness controls all refuse to run when it is off —
+    ``system_stats`` is *not* gated, reading machine stats is always allowed).
+    """
+
+    #: Master switch — off means every desktop automation tool errors out.
+    enabled: bool = True
+    #: Allow reading the accessibility tree and clicking controls (pywinauto).
+    ui_automation: bool = True
+    #: Allow ``click_at`` — screen coordinates are the *fallback* style of
+    #: automation the PRD asks us to keep to a minimum (§5.8).
+    coordinate_fallback: bool = True
+    #: Controls returned by ``inspect_window`` (prompt budget).
+    max_elements: int = Field(default=80, ge=5, le=500)
+    #: Rows returned by ``list_processes``.
+    max_processes: int = Field(default=25, ge=5, le=200)
+    #: Pause after focusing a window and before sending keys to it, so the
+    #: keystrokes are not swallowed by the window that had focus before.
+    focus_delay_s: float = Field(default=0.25, ge=0.0, le=3.0)
+
+
+def _valid_desktop_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`DesktopConfig` field.
+
+    A hand-edited ``desktop.json`` must never take the app down; unknown keys
+    and values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in DesktopConfig.model_fields:
+            continue
+        try:
+            DesktopConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 def _valid_voice_values(values: dict[str, object]) -> dict[str, object]:
     """Drop anything that is not a real :class:`VoiceConfig` field with a sane type.
 
@@ -533,6 +579,7 @@ class Settings(BaseSettings):
     voice: VoiceConfig = VoiceConfig()
     rag: RAGConfig = RAGConfig()
     browser: BrowserConfig = BrowserConfig()
+    desktop: DesktopConfig = DesktopConfig()
     logging: LoggingConfig = LoggingConfig()
 
     @property
@@ -669,6 +716,34 @@ def save_browser_overrides(settings: Settings, values: dict[str, object]) -> Non
     reset_settings_cache()
 
 
+def apply_desktop_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Desktop edits onto ``settings.desktop``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/desktop.json`` wins
+    over ``LUXION_DESKTOP__*`` exactly like the other overlays.
+    """
+    values = _valid_desktop_values(desktop_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.desktop = DesktopConfig(**{**settings.desktop.model_dump(), **values})
+
+
+def save_desktop_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial desktop overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_desktop_values(values)
+    if valid:
+        desktop_override.save_overrides(
+            settings.app.data_dir,
+            {**desktop_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
@@ -677,6 +752,7 @@ def get_settings() -> Settings:
     apply_voice_overrides(settings)
     apply_rag_overrides(settings)
     apply_browser_overrides(settings)
+    apply_desktop_overrides(settings)
     return settings
 
 

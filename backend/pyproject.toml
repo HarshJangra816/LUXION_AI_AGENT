@@ -28,6 +28,11 @@ dependencies = [
     # youtube_* tools. Run `python -m playwright install chromium` once after
     # install; the manager degrades to a clear ToolError until then.
     "playwright>=1.40",
+    # Computer automation (Phase 7): the desktop_* tools — UI Automation tree
+    # + element clicks (pywinauto) and Core Audio volume (pycaw, needs
+    # comtypes/pywin32 which pywinauto already pulls in).
+    "pywinauto>=0.6.8",
+    "pycaw>=20260927",
 ]
 
 [project.optional-dependencies]

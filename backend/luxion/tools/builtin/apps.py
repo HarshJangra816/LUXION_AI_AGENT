@@ -50,6 +50,33 @@ def _start_menu_candidates(name: str) -> list[Path]:
     return found
 
 
+def _app_paths(name: str) -> str | None:
+    """Resolve through the Windows ``App Paths`` registry (``notepad`` → exe).
+
+    The Start Menu only holds real shortcuts, so anything shipped as a
+    system binary (notepad, calc, msedge) is invisible to it — but every one
+    of those is registered here, and ShellExecute honours the same table.
+    """
+    try:
+        import winreg
+    except ImportError:
+        return None
+    candidates = [name if name.lower().endswith(".exe") else f"{name}.exe", name]
+    for hive in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+        for candidate in candidates:
+            key_path = rf"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{candidate}"
+            try:
+                with winreg.OpenKey(hive, key_path) as key:
+                    value, _ = winreg.QueryValueEx(key, "")
+            except OSError:
+                continue
+            if isinstance(value, str) and value:
+                resolved = Path(value.strip('"')).expanduser()
+                if resolved.exists():
+                    return str(resolved)
+    return None
+
+
 def _launch(target: str, ctx: ToolContext) -> tuple[str, str]:
     """Blocking launch. Returns (resolved description, target actually used)."""
     candidate = Path(target).expanduser()
@@ -76,7 +103,22 @@ def _launch(target: str, ctx: ToolContext) -> tuple[str, str]:
             os.startfile(str(chosen))  # noqa: S606
         return f"launched {chosen}", str(chosen)
 
-    raise ToolError(f"nothing found for '{target}' (not a path and not in the Start Menu)")
+    # PATH lookup (`notepad`, `code`, `pwsh`) and the App Paths registry —
+    # both are how Windows itself resolves a bare command name.
+    import shutil
+
+    on_path = shutil.which(target) or shutil.which(f"{target}.exe")
+    resolved = on_path or _app_paths(target)
+    if resolved:
+        if sys.platform == "win32":
+            os.startfile(str(resolved))  # noqa: S606
+        else:
+            import subprocess
+
+            subprocess.Popen([str(resolved)])  # noqa: S603
+        return f"launched {resolved}", str(resolved)
+
+    raise ToolError(f"nothing found for '{target}' (not a path, Start Menu entry or command)")
 
 
 class OpenApplication(Tool):
@@ -145,19 +187,20 @@ class CloseApplication(Tool):
 def _terminate(name: str) -> ToolResult:
     import psutil
 
-    wanted = name.lower()
-    if wanted in PROTECTED_PROCESS_NAMES:
+    wanted = name.lower().strip().removesuffix(".exe")
+    if wanted in PROTECTED_PROCESS_NAMES or f"{wanted}.exe" in PROTECTED_PROCESS_NAMES:
         raise ToolError(f"'{name}' is a protected system process")
 
     terminated: list[str] = []
     skipped: list[str] = []
     for process in psutil.process_iter(["pid", "name"]):
-        current = (process.info.get("name") or "").lower()
-        if (
-            current not in wanted
-            and current != f"{wanted}.exe".lower()
-            and not current.startswith(wanted)
-        ):
+        # An unreadable name comes back as "" — it matches every prefix, so it
+        # must be skipped *before* the test below (we never kill what we
+        # cannot name).
+        current = (process.info.get("name") or "").strip().lower()
+        if not current:
+            continue
+        if current != wanted and current != f"{wanted}.exe" and not current.startswith(wanted):
             continue
         if current in PROTECTED_PROCESS_NAMES:
             skipped.append(current)

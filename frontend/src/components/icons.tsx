@@ -122,13 +122,24 @@ export function TerminalIcon({ className }: IconProps) {
   )
 }
 
-/** Globe — browser agent (Settings → Browser). */
+/** Globe - browser agent (Settings → Browser). */
 export function GlobeIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>
       <circle cx="12" cy="12" r="9" />
       <path d="M3 12h18" />
       <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z" />
+    </svg>
+  )
+}
+
+/** Desktop monitor + pointer - computer automation (Settings → Desktop). */
+export function DesktopIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="2.5" y="4" width="19" height="12.5" rx="2" />
+      <path d="M9 20.5h6M12 16.5v4" />
+      <path d="M13 8.5l3.6 3.6-1.5.4.9 2-1.3.6-.9-2-1.2 1.2z" />
     </svg>
   )
 }

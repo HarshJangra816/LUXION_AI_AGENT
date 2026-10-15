@@ -137,6 +137,14 @@ CAPABILITIES: tuple[Capability, ...] = (
         default=True,
     ),
     Capability(
+        "input_control",
+        "Keyboard & mouse control",
+        "app",
+        "Consent",
+        "Let tools type, press keys and click in other applications.",
+        default=True,
+    ),
+    Capability(
         "calendar",
         "Calendar",
         "account",

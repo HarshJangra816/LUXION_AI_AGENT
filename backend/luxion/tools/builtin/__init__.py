@@ -9,6 +9,7 @@ from __future__ import annotations
 from luxion.tools.base import Tool
 from luxion.tools.builtin.apps import BUILTIN_TOOLS as _APPS
 from luxion.tools.builtin.browser import BUILTIN_TOOLS as _BROWSER
+from luxion.tools.builtin.desktop import BUILTIN_TOOLS as _DESKTOP
 from luxion.tools.builtin.files import BUILTIN_TOOLS as _FILES
 from luxion.tools.builtin.memories import BUILTIN_TOOLS as _MEMORIES
 from luxion.tools.builtin.repository import BUILTIN_TOOLS as _REPOSITORY
@@ -25,6 +26,7 @@ BUILTIN_TOOLS: list[Tool] = [
     *_SCREENSHOT,
     *_FILES,
     *_APPS,
+    *_DESKTOP,
     *_WEB,
     *_BROWSER,
     *_WIKIPEDIA,

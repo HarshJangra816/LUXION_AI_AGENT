@@ -10,15 +10,15 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`) |
-| **Next phase** | Phase 7 per `prd.md` (commit Phase 6 first) |
-| **Last updated** | 2026-10-11 (end of session) |
-| **Backend tests** | **484 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (135 files) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/browser.ts` + `BrowserCard.tsx` added this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15) |
+| **Next phase** | Phase 8 per `prd.md` (Coding Agent) |
+| **Last updated** | 2026-10-15 (end of session) |
+| **Backend tests** | **510 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (149 files) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/desktop.ts` + `DesktopCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 8 commits (Phase 6 as `9c240f9`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | 9 commits (Phase 7 as `4c2b61d`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
-| **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`). |
+| **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7). |
 
 ---
 
@@ -675,7 +675,8 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   in the blank areas, logo readable, **(Phase 3)** chat tool chips + Allow/Deny
   card + Settings → Tools, **(Phase 3.5)** Permissions & capabilities card,
   **(Settings)** adapter cards, **(Phase 4)** Composer mic/PTT + Settings →
-  Voice, **(Phase 5d)** Settings → Memory & knowledge. `vite preview`/headless smoke still aborts (SIGABRT) in this
+  Voice, **(Phase 5d)** Settings → Memory & knowledge, **(Phase 6)** Browser
+  card, **(Phase 7)** Desktop card. `vite preview`/headless smoke still aborts (SIGABRT) in this
   environment, so only `pytest`, `ruff`, `oxlint`, `tsc`/`vite` + the HTTP smoke
   count as evidence.
 - [ ] Phase 3 tools that need a live machine check: `take_screenshot`
@@ -710,6 +711,14 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   Settings, confirm the card renders after Memory, toggles persist, and a
   chat turn can drive `browser_open`/`youtube_search` (Chromium is installed
   at `%LOCALAPPDATA%\ms-playwright`).
+- [x] **Commit Phase 7 — done (2026-10-15)**: committed as `4c2b61d` (10
+  desktop tools + `input_control` capability + `/api/desktop` + Settings
+  Desktop card + 26 tests); memory.md hash recorded via amend.
+- [ ] **Eyeball Settings → Desktop card** (Phase 7) — run `.\scripts\dev.ps1`,
+  open Settings, confirm the card renders after Browser, toggles persist, the
+  status chips (platform / UIA / window count / `input_control`) are live, and
+  a chat turn can drive `list_applications` / `type_text` (Notepad test:
+  "type hello in notepad").
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -727,7 +736,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
 | 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, committed `85ad17a`) |
 | 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
-| 7 | Computer Automation | ⬜ |
+| 7 | Computer Automation | ✅ **done (2026-10-15, committed `4c2b61d`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
 | 8 | Coding Agent | ⬜ |
 | 9 | Web Intelligence | ⬜ |
 | 10 | Communication | ⬜ |
@@ -1311,6 +1320,78 @@ verification of the new card yet.
 `ruff format --check .` clean (135 files); frontend `npm run lint` clean and
 `npm run build` exit 0. **Committed `9c240f9` + pushed.** The new card has
 not been eyeballed in a running UI yet.
+
+---
+
+## Phase 7 — Computer Automation ✅ (2026-10-15, committed `4c2b61d`)
+
+PRD §33.5/§39 — 10 desktop tools behind a new `input_control` capability,
+Windows-only, with the master switch `desktop.enabled`.
+
+**Delivered — backend**
+
+- **`luxion/desktop/` package**: `windows.py` (Win32 enumeration / focus /
+  close via `ctypes`), `processes.py` (`top_processes` — psutil, cpu sampling
+  pass, ranked by cpu/memory/name), `uia.py` (pywinauto UIA read-only tree,
+  lazy import, `available()` probe), `input.py` (**injection layer — see
+  gotcha 1**), `controls.py` (volume via `IAudioEndpointVolume`, brightness via
+  `WmiMonitorBrightness`/`…Methods`), `errors.py`.
+- **10 tools** in `tools/builtin/desktop.py` (registry ships **36**):
+  `list_applications` (low), `focus_application` (medium), `list_processes`
+  (low), `inspect_window` (low, UIA tree clipped to `max_elements`),
+  `click_element` (**medium** — acts on a named control via the a11y tree),
+  `press_keys` / `type_text` / `click_at` (**high** — raw injection),
+  `control_volume` / `control_brightness` (medium). All raise a clear
+  `ToolError` when `desktop.enabled=false`; out-of-range volume/brightness is
+  refused, not silently clamped.
+- **`input_control` capability** (`security/capabilities.py`, 8th entry, kind
+  `app`) — declared by the three high-risk injection tools, checked in
+  `ToolExecutor.prepare()` **before** the risk engine (same hard-block path as
+  `screen_capture`); Settings can grant/deny/reset it.
+- **`config/settings.py`** — `DesktopConfig` (enabled, ui_automation,
+  coordinate_fallback, max_elements 5–500, max_processes 5–200, focus_delay_s
+  0–3) + `desktop.json` overlay (`config/desktop_override.py`, same contract
+  as `rag.json`/`browser.json`).
+- **`api/routes/desktop.py`** — `GET /api/desktop` (effective config +
+  defaults + live status: platform, UIA availability, window count,
+  `input_control` state + reason), `PUT|DELETE /api/desktop/config`.
+
+**Delivered — frontend**
+
+- `lib/desktop.ts` (types + fetchers) + `DesktopCard.tsx` (enable /
+  UIA / coordinate-fallback toggles, max elements/processes, focus delay,
+  live status chips, Save/Discard/Reset-to-.env) wired after
+  `<BrowserCard />` in `SettingsPage.tsx`; new `DesktopIcon`.
+
+**Tests**: 26 new (`test_desktop_tools.py` 19 + `test_desktop_api.py` 7) —
+hermetic (real Notepad/psutil walks only in the two integration-style tests),
+registry/capability/tool-api tests updated for 36 tools + 8 capabilities.
+**510 passed, 1 skipped.**
+
+**Gotchas**
+
+1. **`SendInput` is blocked at machine level on this box** (not a struct
+   bug) — proven with `WH_KEYBOARD_LL`/`WH_MOUSE_LL` hooks: `SendInput` (vk,
+   unicode, scancode, mouse) returns `1`, `last_error=0`, but **0 events reach
+   the input queue**; `keybd_event`/`mouse_event` deliver fine, also from a
+   real interactive console. `input.py` therefore probes **once per process**
+   (`_probe_backend` → cached `_INJECTION_BACKEND`), prefers `sendinput` where
+   it works, and falls back to the legacy APIs. Verified end-to-end against
+   real Notepad (type → inspect → click File via UIA invoke → esc → `ctrl+s`
+   → `ctrl+w`).
+2. **Overlay contract = silently drop out-of-range values** (200 + effective
+   default), never 400/422 — same as browser/voice/rag; a test asserting 400
+   was wrong. Unknown *keys* still 422 via `extra="forbid"`.
+3. `top_processes` drops rows with an empty `name` (a process exiting between
+   the priming pass and the read leaves an unnamed row).
+4. Notepad orphans from test probes can survive `taskkill` as a non-elevated
+   child — close test windows via `ctrl+s`/`ctrl+w`, don't rely on `taskkill`.
+
+**Gates:** backend `pytest` **510 passed, 1 skipped**, `ruff check .` clean,
+`ruff format --check .` clean (149 files); frontend `tsc --noEmit` /
+`oxlint src` / `npm run build` all clean. `/api/desktop` GET/PUT/DELETE
+verified live via TestClient. The Desktop card has not been eyeballed in a
+running UI yet.
 
 ---
 

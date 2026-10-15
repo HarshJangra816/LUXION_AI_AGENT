@@ -70,6 +70,7 @@ def test_registry_is_well_formed() -> None:
         "speaker",
         "screen_capture",
         "notifications",
+        "input_control",
         "calendar",
     ]
     for cap in CAPABILITIES:
@@ -199,13 +200,24 @@ def test_capability_allows_when_granted(settings: Settings, store: CapabilitySto
     assert prepared.decision.source == "autonomy"
 
 
-def test_only_screenshot_declares_a_capability(settings: Settings) -> None:
+def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
+    """Exactly the screen and input tools are gated behind a capability.
+
+    Everything else runs on autonomy alone, so a capability toggle can never
+    silently widen what a tool is allowed to do.
+    """
     declared = {
         spec.name: spec.requires
         for spec in build_registry(settings).specs()
         if spec.requires is not None
     }
-    assert declared == {"take_screenshot": "screen_capture"}
+    assert declared == {
+        "take_screenshot": "screen_capture",
+        "click_element": "input_control",
+        "press_keys": "input_control",
+        "type_text": "input_control",
+        "click_at": "input_control",
+    }
 
 
 # ------------------------------------------------------------------ iCalendar

@@ -53,6 +53,17 @@ EXPECTED_BUILTIN_TOOLS = {
     "youtube_search",
     "youtube_open",
     "youtube_control",
+    # Phase 7 — PRD §5.8 / §33.5 desktop automation (app + UIA + input + system)
+    "list_applications",
+    "focus_application",
+    "list_processes",
+    "inspect_window",
+    "click_element",
+    "press_keys",
+    "type_text",
+    "click_at",
+    "control_volume",
+    "control_brightness",
 }
 
 

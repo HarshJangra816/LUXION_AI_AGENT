@@ -45,6 +45,17 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "youtube_search",
         "youtube_open",
         "youtube_control",
+        # Phase 7 — desktop automation
+        "list_applications",
+        "focus_application",
+        "list_processes",
+        "inspect_window",
+        "click_element",
+        "press_keys",
+        "type_text",
+        "click_at",
+        "control_volume",
+        "control_brightness",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"
