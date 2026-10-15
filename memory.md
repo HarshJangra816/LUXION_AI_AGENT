@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15); **Phase 8 — Coding Agent ✅** (2026-10-15) |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`) |
 | **Next phase** | Phase 9 per `prd.md` (Web Intelligence) |
 | **Last updated** | 2026-10-15 (end of session) |
 | **Backend tests** | **559 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (159 files) |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/code.ts` + `CodeCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 14 commits (Phase 7 as `e528940`, Phase 8 this session); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | 15 commits (Phase 7 as `e528940`, Phase 8 as `70f02ff`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
 | **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh). Keep new phases on this diet. |
@@ -724,6 +724,9 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   status chips (platform / UIA / window count / `input_control`) are live, and
   a chat turn can drive `list_applications` / `type_text` (Notepad test:
   "type hello in notepad").
+- [x] **Commit Phase 8 — done (2026-10-15)**: committed as `70f02ff` (11
+  coding tools + `terminal` capability + `/api/code` + Settings Coding card +
+  49 tests; milestone "fix this project" proven live).
 - [ ] **Eyeball Settings → Coding card** (Phase 8) — run `.\scripts\dev.ps1`,
   open Settings, confirm the card renders after Desktop, git/gh chips are
   green, toggles persist, and the **Terminal consent** line reads "not
@@ -753,7 +756,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, committed `85ad17a`) |
 | 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
 | 7 | Computer Automation | ✅ **done (2026-10-15, committed `e528940`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
-| 8 | Coding Agent | ✅ **done (2026-10-15)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
+| 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
 | 9 | Web Intelligence | ⬜ |
 | 10 | Communication | ⬜ |
 | 11 | Vision + Hardware | ⬜ |
@@ -1411,7 +1414,7 @@ running UI yet.
 
 ---
 
-## Phase 8 — Coding Agent ✅ (2026-10-15)
+## Phase 8 — Coding Agent ✅ (2026-10-15, committed `70f02ff`)
 
 PRD §34/§35 + §32 (Tools → Terminal/Git) — repository analysis, grep, surgical
 editing, a sandboxed terminal, git and GitHub. Milestone *"Fix this project."*
