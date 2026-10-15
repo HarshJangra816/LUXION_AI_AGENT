@@ -16,7 +16,7 @@
 | **Backend tests** | **559 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (159 files) |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/code.ts` + `CodeCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 15 commits (Phase 7 as `e528940`, Phase 8 as `70f02ff`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
 | **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh). Keep new phases on this diet. |
