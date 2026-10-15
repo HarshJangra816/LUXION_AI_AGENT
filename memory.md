@@ -16,7 +16,7 @@
 | **Backend tests** | **510 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (149 files) |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/desktop.ts` + `DesktopCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | 9 commits (Phase 7 as `4c2b61d`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | 13 commits (Phase 7 as `e528940`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7). |
 
@@ -711,7 +711,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   Settings, confirm the card renders after Memory, toggles persist, and a
   chat turn can drive `browser_open`/`youtube_search` (Chromium is installed
   at `%LOCALAPPDATA%\ms-playwright`).
-- [x] **Commit Phase 7 — done (2026-10-15)**: committed as `4c2b61d` (10
+- [x] **Commit Phase 7 — done (2026-10-15)**: committed as `e528940` (10
   desktop tools + `input_control` capability + `/api/desktop` + Settings
   Desktop card + 26 tests); memory.md hash recorded via amend.
 - [ ] **Eyeball Settings → Desktop card** (Phase 7) — run `.\scripts\dev.ps1`,
@@ -736,7 +736,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 4 | Voice | ✅ done (2026-10-05) — manager, `/api/voice` routes, frontend (`voice.ts`, Composer PTT/live, ChatPage command→turn→speak, Settings → Voice), 239 tests, **live API smoke on :8763**; only the browser eyeball remains |
 | 5 | Memory + RAG | ✅ **done (2026-10-10)** — **5a** storage/index (2026-10-05), **5b** extraction + `remember`/`recall`/`forget` + 82 tests (2026-10-08), **5c** repository index + `search_code` + `/api/repository` + 54 tests (2026-10-08), **5d** context injection + `/memory/config` + Settings → Memory card + 34 tests (2026-10-10, committed `85ad17a`) |
 | 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
-| 7 | Computer Automation | ✅ **done (2026-10-15, committed `4c2b61d`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
+| 7 | Computer Automation | ✅ **done (2026-10-15, committed `e528940`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
 | 8 | Coding Agent | ⬜ |
 | 9 | Web Intelligence | ⬜ |
 | 10 | Communication | ⬜ |
@@ -1323,7 +1323,7 @@ not been eyeballed in a running UI yet.
 
 ---
 
-## Phase 7 — Computer Automation ✅ (2026-10-15, committed `4c2b61d`)
+## Phase 7 — Computer Automation ✅ (2026-10-15, committed `e528940`)
 
 PRD §33.5/§39 — 10 desktop tools behind a new `input_control` capability,
 Windows-only, with the master switch `desktop.enabled`.
