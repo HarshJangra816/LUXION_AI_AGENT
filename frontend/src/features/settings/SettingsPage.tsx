@@ -55,6 +55,7 @@ import { MemoryCard } from './MemoryCard'
 import { VoiceCard } from './VoiceCard'
 import { DesktopCard } from './DesktopCard'
 import { CodeCard } from './CodeCard'
+import { WebCard } from './WebCard'
 import { MAX_BRIGHTNESS, MIN_BRIGHTNESS, useGraphics, type Quality } from '../../lib/graphics'
 import {
   formatCost,
@@ -1273,6 +1274,8 @@ export function SettingsPage() {
       <DesktopCard />
 
       <CodeCard />
+
+      <WebCard />
 
       <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
         <div className="flex items-center gap-2">

@@ -10,16 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`) |
-| **Next phase** | Phase 9 per `prd.md` (Web Intelligence) |
-| **Last updated** | 2026-10-15 (end of session) |
-| **Backend tests** | **559 passing**, 1 skipped, `ruff check` + `ruff format --check` clean (159 files) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/code.ts` + `CodeCard.tsx` added this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `9ea817d`) |
+| **Next phase** | Phase 10 per `prd.md` (Communication) |
+| **Last updated** | 2026-10-20 (Phase 9 finished) |
+| **Backend tests** | **620 passing**, 2 skipped, `ruff check` + `ruff format --check` clean (177 files) — +59 from Phase 9, +2 speed-fix tests |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/web.ts` + `WebCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`, **Phase 9 as `9ea817d`**); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
-| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh). Keep new phases on this diet. |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh) and **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless — no API-key settings exist in the Web family). Keep new phases on this diet. |
 
 ---
 
@@ -738,6 +738,31 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   (running commands needs consent, PRD §39); the chat tools explain where to
   grant it, but nothing that executes works until you flip it in Settings →
   Permissions & capabilities.
+- [x] **FINISH Phase 9 — `internet_speed` 403 — FIXED (2026-10-20)**: Cloudflare
+  `/meta` answers **403 `{}`** unless the request carries an `Origin` *or*
+  `Referer` of `https://speed.cloudflare.com` (a browser User-Agent alone is
+  NOT enough; `/__down` works with any UA). `luxion/web/http.py` gained a
+  per-request `headers=` param on `get_text/get_json/get_bytes/post_bytes`
+  (merged over the shared User-Agent); `luxion/web/speed.py` now sends
+  `SPEED_HEADERS = {"Origin": "https://speed.cloudflare.com", "Referer":
+  "https://speed.cloudflare.com/"}` on all three legs, and `colo` — now a
+  **dict** (`{"iata": "DEL", …}`) instead of a string — is normalised by
+  `_colo_name()` (dict → `iata` or `city`; str → itself). **7/7 tools
+  live-verified** (`Temp\opencode\verify_tools_live.py`: search, weather,
+  news, movies, stock, clock, speed — speed reported 5.81 Mbps via DEL,
+  ISP JKS BROADBAND). +2 tests in `test_web_sources.py` (colo shapes,
+  headers sent).
+- [x] **Commit Phase 9 — done (2026-10-20, committed `9ea817d`)**: all of
+  `luxion/web/`, `webintel.py`, `WebConfig`/`web.json`, `/api/web`, `WebCard`,
+  `.env.example` `LUXION_WEB__*`, the 3 new test files + updated tool sets,
+  speed fix, memory.md.
+- [ ] **Eyeball Settings → Web card** (Phase 9) — run `.\scripts\dev.ps1`,
+  open Settings, confirm the card renders after Coding (Globe icon, on +
+  keyless chips), **Test sources** button reports `ok` for search / weather /
+  news / movies / clock (finance is deliberately not probed), toggles + numbers
+  persist through reload, Reset-to-.env restores defaults. Then in chat:
+  "weather in tokyo" → `get_weather`; "top tech news" → `get_news`;
+  "msft stock" → `stock_quote`; "what time in new york" → `world_clock`.
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -757,7 +782,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
 | 7 | Computer Automation | ✅ **done (2026-10-15, committed `e528940`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
 | 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
-| 9 | Web Intelligence | ⬜ |
+| 9 | Web Intelligence | ✅ **done (2026-10-20, committed `9ea817d`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ⬜ |
 | 11 | Vision + Hardware | ⬜ |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
@@ -766,7 +791,32 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 ## Latest Update
 
-### Phase 4 — Voice (backend done 2026-10-02)
+### Phase 9 — Web Intelligence (✅ done 2026-10-20, committed `9ea817d`)
+
+- Built `backend/luxion/web/` (search → DuckDuckGo HTML, weather → Open-Meteo,
+  news → RSS/Atom + HN, movies → TVMaze, finance → **Yahoo-only**, speed →
+  Cloudflare, clock → zoneinfo), 7 new tools → registry **54**,
+  `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`),
+  `lib/web.ts` + Settings → **Web card**, PRD §37 provenance stamps +
+  system-prompt sourcing rules. **Zero new Python deps** (FOSS-first).
+- User decisions: DDG HTML via httpx, TVMaze, and finance as "Stooq + Yahoo"
+  — **shipped Yahoo-only** because Stooq 404s from this machine (every
+  parameter variant); Yahoo's v8 chart has OHLCV + 52-week range + volume
+  anyway, so nothing was lost.
+- Gates green: backend **620 passed, 2 skipped**, `ruff check` + `format
+  --check` clean (177 files); frontend `oxlint` clean, `tsc -b` + `vite build`
+  exit 0. **7/7 tools live-verified over real HTTP.**
+- The `internet_speed` 403 (fixed 2026-10-20): Cloudflare `/meta` needs an
+  `Origin`/`Referer` of `speed.cloudflare.com` — `http.py` gained `headers=`,
+  `speed.py` sends `SPEED_HEADERS` on all legs and `_colo_name()` normalises
+  the now-dict `colo` field. (+2 tests.)
+
+---
+
+### [archived] Phase 4 — Voice, state as of 2026-10-02 — **FINISHED since**
+(The "frontend/tests NOT started" lines below were true then and are long
+done — see the **Phase 4 (Voice) - FINISHED** section below for the real
+end state.)
 
 **Decisions taken earlier (still holding)**: backend Python mic capture
 (sounddevice/PortAudio), faster-whisper for STT, pyttsx3/SAPI5 for TTS,
@@ -1492,6 +1542,153 @@ child; `LUXION_TEST_HARMLESS` does).
 **Gates:** backend `pytest` **559 passed, 1 skipped**, `ruff check .` clean,
 `ruff format --check .` clean (159 files); frontend `tsc -b` exit 0,
 `oxlint` clean, `npm run build` OK (pre-existing chunk-size warning only).
+
+---
+
+## Phase 9 — Web Intelligence ✅ (2026-10-20, committed `9ea817d`)
+
+PRD §37 (Search/Weather/News/Movies/Finance/Time/Internet speed) + §38
+(financial *analysis*, not predictions). **Zero new Python dependencies**
+(FOSS-first): stdlib (`xml.etree`, `zoneinfo`, `csv`, `json`, `email.utils`)
++ the already-present `httpx`, every source **keyless**.
+
+**Decisions taken with the user (2026-10-19):**
+
+1. Search → **DuckDuckGo HTML endpoint via httpx** (not the `ddgs` package,
+   not Playwright) — one GET, no key, works with browser automation off.
+2. Movies → **TVMaze** (keyless, unrate-limited) — no registration needed.
+3. Finance → chosen as "Stooq + Yahoo keyless"; **Shipped Yahoo-only.**
+   ⚠️ **Stooq's `q/l` CSV answers HTTP 404 from this machine for *every*
+   parameter variant** (Stooq-branded error page → geo/UA block, verified
+   2026-10-19). Yahoo's v8 chart turned out to carry strictly more —
+   OHLCV bars + `fiftyTwoWeekHigh/Low` + `regularMarketVolume/Price` +
+   `fulldayChangePercent` — in **one** request instead of two, so dropping
+   Stooq loses nothing. Deviation from the picked combo, flagged to user.
+
+**Delivered — backend**
+
+- **`luxion/web/` package** (all network I/O funnels through `http.py`, so
+  tests patch exactly one seam):
+  - `errors.py` — `WebError`, deliberately *not* `ToolError`: `luxion.web`
+    sits below the tool layer and must import standalone; tools map it up.
+  - `http.py` — `get_text/get_json/get_bytes/post_bytes`: shared User-Agent
+    (or `WebConfig.user_agent`) + `WebConfig.timeout_s`, redirects on,
+    failures normalised to `WebError("host answered HTTP nnn")`, plus a
+    per-request **`headers=`** merge (added for Cloudflare, see Open Items).
+  - `_html.py` — `strip_tags` replaces tags with **nothing** (inline `<b>`
+    must not inject a space: `API</b>.` → `API.`, not `API .`), unescapes,
+    collapses whitespace, and removes invisible code points (`_INVISIBLE` =
+    U+200B–200F, U+2060–2064, U+FEFF, U+FE0E/FE0F — DDG titles carry a
+    leading `\ufe0f` that breaks Windows consoles).
+  - `provenance.py` — **PRD §37**: `stamp()` → `[source: …, retrieved:
+    2026-10-19T…Z]` appended to every web tool output, `provenance_dict()`
+    merged into `data`, and `GUIDANCE` (sourcing rules: live vs training
+    knowledge vs memories, stamps can go stale).
+  - `search.py` — `html.duckduckgo.com/html/` + `kl` region;
+    `unwrap()` decodes `/l/?uddg=` redirects to the real URL.
+  - `weather.py` — Open-Meteo geocoding (names the town it *found*) +
+    forecast, full **WMO code table** (0–99), 16-point wind compass,
+    `format_report` renders Now + 3 days in configured units.
+  - `news.py` — RSS **and** Atom via stdlib `ElementTree` (per-topic curated
+    feeds: BBC + Guardian world/business, BBC + Verge + Ars tech, BBC +
+    Guardian science, HN Algolia for `hackernews`), feeds gathered
+    concurrently with `return_exceptions=True` (one dead outlet never kills
+    headlines), **`_dedupe()` tracks URL *and* title** — same-link repeats
+    (BBC's own feed double-lists headlines) *and* same-headline
+    different-link wire copies both drop.
+  - `movies.py` — TVMaze search / singlesearch / `id:<n>` lookup with
+    `embed=episodes` (latest episode, count, community rating labelled as
+    crowd-sourced, not a critic score).
+  - `finance.py` — **Yahoo v8 only**: `parse_chart()` (pure, rejects bad
+    JSON + empty result = honest "unknown ticker"), `build_snapshot()` (meta
+    beats the last bar), `compute_indicators()` (SMA20/50/200, 1d/5d/1mo/
+    3mo/1y returns, 52w range position, annualised vol = stdev of log
+    returns × √252), `_range_position()` prefers meta's 52w high/low over a
+    short `period`, `_price()` display rounding (342.4599914 → `342.46`,
+    sub-dollar keeps 4 dp), `format_quote()` states *"descriptive
+    statistics… not a prediction"* + lists unavailable fields (market cap,
+    statements) instead of guessing (§38).
+  - `speed.py` — Cloudflare `/meta` (latency = RTT of that call) +
+    `/__down?bytes=N` + optional `/__up` POST; `mbps()` = bytes×8/s; payload
+    sizes from `WebConfig.speed_*`.
+  - `clock.py` — `zoneinfo` (+ installed `tzdata`, Windows has no IANA db),
+    `CITY_ALIASES` ("Tokyo" → `Asia/Tokyo`), day/night from local hour.
+- **7 tools** in `tools/builtin/webintel.py` → registry now **54**: all
+  `risk: low` + `read_only=True`, **`requires=None`** (public web data needs
+  no capability — this family is policy-gated, not consent-gated), category
+  `web_intel`. Master gate `settings.web.enabled` with a card-pointing error;
+  `internet_speed` additionally honours `speed_enabled`. `_guard()` **must be
+  async** — a sync wrapper returns the coroutine, so `WebError` would escape
+  the `try` and never become `ToolError`.
+- **`WebConfig`** (11 knobs: enabled, timeout_s, max_results, news_items,
+  search_region, temperature_unit, wind_unit, speed_enabled,
+  speed_download_bytes, speed_upload_bytes, user_agent) + `web.json` overlay
+  (`config/web_override.py`) + `apply/save_web_overrides` chained in
+  `get_settings` + `.env.example` `LUXION_WEB__*` block.
+- **`/api/web`** — GET bundle (config/defaults/status/catalog),
+  PUT (partial merge, unknown key → 422, out-of-range silently dropped like
+  every other overlay), DELETE → `.env`; **`POST /web/probe`** hits 5 sources
+  once for the card's *Test sources* button (finance deliberately excluded —
+  2 heavy calls; probe is opt-in, never automatic).
+- **system_prompt**: appends `provenance.GUIDANCE` **iff** any exposed spec
+  has `category == "web_intel"` — PRD §37's current/historical/model/user
+  distinction rides along exactly when live tools exist (tested both ways).
+
+**Delivered — frontend**: `lib/web.ts` (bundle/config/probe fetchers) +
+`WebCard.tsx` (on + keyless chips, three columns Access / Retrieval /
+Units & speed, numeric + select controls, *Test sources* results list,
+Save/Discard/Reset-to-.env, unsaved-changes line) rendered after
+`<CodeCard />`; reuses the existing `GlobeIcon`.
+
+**Tests**: +59 → **618 passed, 2 skipped** (`test_web_sources.py` pure
+parsing/maths/`_dedupe`/provenance offline at the `web.http` seam,
+`test_web_tools.py` all 7 tools incl. every disabled-gate refusal +
+WebError→ToolError, `test_web_api.py` bundle/patch-merges/422/reset/atomic
+write; `test_tools.py` + `test_tools_api.py` sets now carry the 7 names).
+
+**Live-verified over real HTTP** — all 7 tools driven exactly as the agent
+loop would (`Temp\opencode\verify_tools_live.py`): `web_search` (DDG,
+invisible char gone), `get_weather` (Tokyo, forecast), `get_news` (tech
+headlines, deduped), `movie_lookup` (The Wire, 8.9/10), `stock_quote` (MSFT
+live + formatted), `world_clock` (3 zones), and — since the 2026-10-20 fix —
+`internet_speed` (5.81 Mbps download, colo `DEL`, latency 592 ms, ISP
+"JKS BROADBAND"); provenance stamp + `data.provenance` asserted on every one;
+the disabled gate refused all 7.
+
+**The `internet_speed` 403 (fixed 2026-10-20)**: Cloudflare `/meta` answers
+403 `{}` unless the request carries an `Origin` *or* `Referer` belonging to
+`speed.cloudflare.com` — a browser-like User-Agent alone is not enough, and
+`/__down` doesn't care. Fix: `http.py`'s per-request `headers=` param (merged
+over the shared UA) + `SPEED_HEADERS = {"Origin": "https://speed.cloudflare.com",
+"Referer": "https://speed.cloudflare.com/"}` sent on all three legs
+(`/meta`, `/__down`, `/__up`) in `speed.py`; plus `_colo_name()` because
+`colo` is now a **dict** (`{"iata": "DEL", "lat": …, "city": …}`) — the old
+`data.get("colo") or ""` would have printed the raw dict. +2 tests
+(`_colo_name` shapes; `connection_info` sends `SPEED_HEADERS`).
+
+**Gotchas**
+
+1. **Stooq is unreachable from here** — every `q/l` variant 404s; don't
+   re-add it without re-testing live first.
+2. **Cloudflare `/meta` 403s without `Origin`/`Referer` of
+   speed.cloudflare.com**; `/__down` doesn't care. Its `colo` field is a
+   **dict** (`iata`/`lat`/`city`), not a string.
+3. **Atom namespaced children** — `node.find("title")` misses
+   `{ns}title`; match children by `tag.split("}")[-1]`.
+4. **Test helper `_async(value)` must return the async *function***, not
+   `_inner()` — patching a module attribute with a coroutine makes every
+   call raise `TypeError: 'coroutine' object is not callable`.
+5. DDG result titles contain `\ufe0f` — strip invisible code points, not
+   just whitespace, or Windows cp1252 consoles crash on print.
+6. **Live-verify scripts need `PYTHONIOENCODING=utf-8`** on Windows — the
+   tool output contains `→`/`—`/`°` that cp1252 cannot encode, and the
+   *print* crashes even when the tool itself succeeded.
+
+**Gates (2026-10-20):** backend `pytest` **620 passed, 2 skipped**,
+`ruff check .` clean, `ruff format --check .` clean (**177 files**);
+frontend `oxlint` clean, `tsc -b` exit 0, `vite build` exit 0 (pre-existing
+chunk-size warning only); **7/7 tools live-verified**. **Committed as
+`9ea817d`; Web card not yet eyeballed in a running UI.**
 
 ---
 

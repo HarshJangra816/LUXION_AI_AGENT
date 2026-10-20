@@ -22,6 +22,12 @@ Values come from (in increasing priority):
 8. The desktop-automation edits saved from the Settings → Desktop page
    (``<data_dir>/desktop.json`` — partial overlay, see
    :func:`apply_desktop_overrides`)
+9. The coding-agent edits saved from the Settings → Coding page
+   (``<data_dir>/code.json`` — partial overlay, see
+   :func:`apply_code_overrides`)
+10. The web-intelligence edits saved from the Settings → Web page
+   (``<data_dir>/web.json`` — partial overlay, see
+   :func:`apply_web_overrides`)
 
 No secrets are ever hardcoded here. API keys are referenced either
 directly through a secret-typed setting or via an environment variable
@@ -37,7 +43,13 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from luxion.config import browser_override, code_override, desktop_override, rag_override
+from luxion.config import (
+    browser_override,
+    code_override,
+    desktop_override,
+    rag_override,
+    web_override,
+)
 from luxion.config.provider_override import load_selection
 from luxion.config.voice_override import load_overrides, save_overrides
 
@@ -560,6 +572,59 @@ def _valid_code_values(values: dict[str, object]) -> dict[str, object]:
     return accepted
 
 
+class WebConfig(BaseModel):
+    """Web-intelligence policy (PRD §37, §38, Phase 9).
+
+    The ``web_*`` / ``get_weather`` / ``get_news`` / ``movie_lookup`` /
+    ``stock_quote`` / ``internet_speed`` / ``world_clock`` tools read these
+    knobs. ``enabled`` is the master switch — off means every one of them
+    refuses to run and tells the model where to turn them back on. Every
+    source in this family is **keyless**, so there is no API-key setting here
+    by design (FOSS-first: stdlib + the existing ``httpx``).
+    """
+
+    #: Master switch — off means every web-intelligence tool errors out.
+    enabled: bool = True
+    #: Per-request HTTP budget shared by every source.
+    timeout_s: float = Field(default=15.0, gt=0, le=60)
+    #: Results ``web_search`` returns (1–20).
+    max_results: int = Field(default=5, ge=1, le=20)
+    #: Headlines ``get_news`` returns.
+    news_items: int = Field(default=8, ge=1, le=25)
+    #: DDG region code (``wt-wt`` = world-wide, ``us-en``, ``in-en``, …).
+    search_region: str = "wt-wt"
+    #: Temperature scale for weather answers.
+    temperature_unit: Literal["celsius", "fahrenheit"] = "celsius"
+    #: Wind-speed scale for weather answers.
+    wind_unit: Literal["kmh", "mph"] = "kmh"
+    #: Allow ``internet_speed`` — it downloads a real payload over your link.
+    speed_enabled: bool = True
+    #: Download payload for the speed test (bytes).
+    speed_download_bytes: int = Field(default=10_000_000, ge=100_000, le=100_000_000)
+    #: Upload payload for the speed test (bytes). ``0`` skips the upload leg.
+    speed_upload_bytes: int = Field(default=0, ge=0, le=50_000_000)
+    #: Spoofed user agent; empty = the Luxion default identity.
+    user_agent: str = ""
+
+
+def _valid_web_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`WebConfig` field.
+
+    A hand-edited ``web.json`` must never take the app down; unknown keys
+    and values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in WebConfig.model_fields:
+            continue
+        try:
+            WebConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 def _valid_desktop_values(values: dict[str, object]) -> dict[str, object]:
     """Drop anything that is not a real :class:`DesktopConfig` field.
 
@@ -617,6 +682,7 @@ class Settings(BaseSettings):
     browser: BrowserConfig = BrowserConfig()
     desktop: DesktopConfig = DesktopConfig()
     code: CodeConfig = CodeConfig()
+    web: WebConfig = WebConfig()
     logging: LoggingConfig = LoggingConfig()
 
     @property
@@ -809,6 +875,34 @@ def save_code_overrides(settings: Settings, values: dict[str, object]) -> None:
     reset_settings_cache()
 
 
+def apply_web_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Web edits onto ``settings.web``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/web.json`` wins over
+    ``LUXION_WEB__*`` exactly like the other overlays.
+    """
+    values = _valid_web_values(web_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.web = WebConfig(**{**settings.web.model_dump(), **values})
+
+
+def save_web_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial web overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_web_values(values)
+    if valid:
+        web_override.save_overrides(
+            settings.app.data_dir,
+            {**web_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
@@ -819,6 +913,7 @@ def get_settings() -> Settings:
     apply_browser_overrides(settings)
     apply_desktop_overrides(settings)
     apply_code_overrides(settings)
+    apply_web_overrides(settings)
     return settings
 
 

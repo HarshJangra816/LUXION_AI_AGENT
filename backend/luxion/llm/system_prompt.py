@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 
 from luxion.config.settings import Settings
 from luxion.tools.base import ToolSpec
+from luxion.web.provenance import GUIDANCE as WEB_GUIDANCE
 
 _BASE = """\
 You are Luxion, a personal AI assistant running locally on the user's desktop.
@@ -74,6 +75,10 @@ def build_system_prompt(
     prompt = body.format(autonomy=settings.security.autonomy_level)
     if tools is not None:
         prompt += _tool_guide(tools)
+        # PRD §37: the model must tell live retrieval from its own knowledge,
+        # so the sourcing rules ride along exactly when a web tool is exposed.
+        if any(spec.category == "web_intel" for spec in tools):
+            prompt += "\n\n" + WEB_GUIDANCE
     if block := knowledge.strip():
         prompt += f"\n\nContext retrieved for this turn:\n{block}"
     return prompt + f"\nCurrent UTC time: {now.strftime('%Y-%m-%d %H:%M:%S')}\n"

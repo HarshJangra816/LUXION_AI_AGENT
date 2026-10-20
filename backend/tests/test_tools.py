@@ -76,6 +76,14 @@ EXPECTED_BUILTIN_TOOLS = {
     "git_commit",
     "git_clone",
     "github_prs",
+    # Phase 9 — PRD §37/§38 web intelligence (all keyless, low + read-only)
+    "web_search",
+    "get_weather",
+    "get_news",
+    "movie_lookup",
+    "stock_quote",
+    "internet_speed",
+    "world_clock",
 }
 
 

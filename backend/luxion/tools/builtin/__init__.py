@@ -18,6 +18,7 @@ from luxion.tools.builtin.screenshot import BUILTIN_TOOLS as _SCREENSHOT
 from luxion.tools.builtin.system import BUILTIN_TOOLS as _SYSTEM
 from luxion.tools.builtin.time_tools import BUILTIN_TOOLS as _TIME
 from luxion.tools.builtin.web import BUILTIN_TOOLS as _WEB
+from luxion.tools.builtin.webintel import BUILTIN_TOOLS as _WEBINTEL
 from luxion.tools.builtin.wikipedia import BUILTIN_TOOLS as _WIKIPEDIA
 from luxion.tools.builtin.youtube import BUILTIN_TOOLS as _YOUTUBE
 
@@ -29,6 +30,7 @@ BUILTIN_TOOLS: list[Tool] = [
     *_APPS,
     *_DESKTOP,
     *_WEB,
+    *_WEBINTEL,
     *_BROWSER,
     *_WIKIPEDIA,
     *_YOUTUBE,

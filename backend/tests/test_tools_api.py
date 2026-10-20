@@ -68,6 +68,14 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "git_commit",
         "git_clone",
         "github_prs",
+        # Phase 9 — web intelligence (keyless)
+        "web_search",
+        "get_weather",
+        "get_news",
+        "movie_lookup",
+        "stock_quote",
+        "internet_speed",
+        "world_clock",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"
