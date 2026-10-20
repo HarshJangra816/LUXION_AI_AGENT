@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertIcon, GlobeIcon, RefreshIcon } from '../../components/icons'
+import { SettingsCard } from '../../components/SettingsCard'
 import { ApiError } from '../../lib/api'
 import {
   getBrowserConfig,
@@ -177,11 +178,12 @@ export function BrowserCard() {
   const status = bundle.status
 
   return (
-    <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <GlobeIcon className="size-4 text-tint" />
-          <h3 className="text-sm font-semibold text-ink">Browser agent</h3>
+    <SettingsCard
+      id="browser"
+      title="Browser agent"
+      icon={<GlobeIcon className="size-4 text-tint" />}
+      badge={
+        <>
           <span
             className={`rounded border px-1.5 py-0.5 font-mono text-[10px] tracking-wider uppercase ${
               !status.enabled
@@ -198,7 +200,18 @@ export function BrowserCard() {
               {status.url}
             </span>
           ) : null}
-        </div>
+        </>
+      }
+      hint={
+        <>
+          Playwright Chromium drives the <span className="font-mono text-[11px]">browser_*</span> and{' '}
+          <span className="font-mono text-[11px]">youtube_*</span> tools — open pages, search, click,
+          type, extract, download and upload (PRD §5.7, §33.6-8). Wikipedia tools use plain HTTP and
+          work even while this is off. Changes apply when you press{' '}
+          <span className="text-ink">Save</span>.
+        </>
+      }
+      actions={
         <button
           type="button"
           onClick={() => {
@@ -215,16 +228,8 @@ export function BrowserCard() {
           <RefreshIcon className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
-      </div>
-
-      <p className="mt-1.5 text-xs text-muted">
-        Playwright Chromium drives the <span className="font-mono text-[11px]">browser_*</span> and{' '}
-        <span className="font-mono text-[11px]">youtube_*</span> tools — open pages, search, click,
-        type, extract, download and upload (PRD §5.7, §33.6-8). Wikipedia tools use plain HTTP and
-        work even while this is off. Changes apply when you press{' '}
-        <span className="text-ink">Save</span>.
-      </p>
-
+      }
+    >
       {error ? (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
           <AlertIcon className="mt-0.5 size-4 shrink-0" />
@@ -353,6 +358,6 @@ export function BrowserCard() {
           </button>
         </div>
       </div>
-    </section>
+    </SettingsCard>
   )
 }

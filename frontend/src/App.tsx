@@ -6,8 +6,10 @@ import { RefreshIcon } from './components/icons'
 import { StatusDot } from './components/StatusDot'
 import { ChatPage } from './features/chat/ChatPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
+import { IntegrationsPage } from './features/integrations/IntegrationsPage'
 import { MemoryPage } from './features/memory/MemoryPage'
 import { SettingsPage } from './features/settings/SettingsPage'
+import { ToolsPage } from './features/tools/ToolsPage'
 import { fetchHealth, statusLabel, type BackendState } from './lib/api'
 import { useAIState } from './lib/aiState'
 
@@ -18,6 +20,8 @@ const NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', ready: true },
   { id: 'chat', label: 'Chat', ready: true },
   { id: 'memory', label: 'Memory', ready: true },
+  { id: 'tools', label: 'Tools', ready: true },
+  { id: 'integrations', label: 'Integrations', ready: true },
   { id: 'settings', label: 'Settings', ready: true },
 ] as const
 
@@ -25,7 +29,9 @@ const PAGE_META: Record<string, { title: string; subtitle: string }> = {
   dashboard: { title: 'Dashboard', subtitle: 'System health and quick actions' },
   chat: { title: 'Chat', subtitle: 'Phase 1 - streaming conversation' },
   memory: { title: 'Memory', subtitle: 'Phase 5 - retrieval, settings and knowledge' },
-  settings: { title: 'Settings', subtitle: 'Phase 1 - AI provider and graphics' },
+  tools: { title: 'Tools', subtitle: 'Tool permissions and capability gates' },
+  integrations: { title: 'Integrations', subtitle: 'Voice, browser, desktop, coding and web' },
+  settings: { title: 'Settings', subtitle: 'AI provider, context, appearance and graphics' },
 }
 
 function BrandMark() {
@@ -208,6 +214,14 @@ function Shell() {
         ) : activeNav === 'memory' ? (
           <div className="min-h-0 flex-1 overflow-y-auto">
             <MemoryPage />
+          </div>
+        ) : activeNav === 'tools' ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <ToolsPage />
+          </div>
+        ) : activeNav === 'integrations' ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <IntegrationsPage />
           </div>
         ) : activeNav === 'settings' ? (
           <div className="min-h-0 flex-1 overflow-y-auto">

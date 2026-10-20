@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertIcon, GaugeIcon, PlusIcon, RefreshIcon, TrashIcon } from '../../components/icons'
+import { SettingsCard } from '../../components/SettingsCard'
 import { useAIState } from '../../lib/aiState'
 import { ApiError } from '../../lib/api'
 import {
@@ -339,22 +340,34 @@ export function MemoryCard() {
   )
 
   return (
-    <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <GaugeIcon className="size-4 text-tint" />
-          <h3 className="text-sm font-semibold text-ink">Memory &amp; knowledge</h3>
-          {bundle ? (
+    <SettingsCard
+      id="memory"
+      title="Memory & knowledge"
+      icon={<GaugeIcon className="size-4 text-tint" />}
+      defaultOpen
+      badge={
+        bundle ? (
+          <>
             <span className="rounded border border-white/15 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-muted uppercase">
               {memoryTotal} memories · {bundle.chunks} chunks
             </span>
-          ) : null}
-          {bundle?.needs_reembed ? (
-            <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-warning uppercase">
-              re-embed needed
-            </span>
-          ) : null}
-        </div>
+            {bundle.needs_reembed ? (
+              <span className="rounded border border-warning/40 bg-warning/10 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-warning uppercase">
+                re-embed needed
+              </span>
+            ) : null}
+          </>
+        ) : null
+      }
+      hint={
+        <>
+          What Luxion remembers about you and your projects, and how retrieval feeds chat turns
+          (PRD §33.14, §58). Recalled memories and the files relevant to each question are injected
+          into the system prompt — both streams share one char budget. Changes apply when you press{' '}
+          <span className="text-ink">Save</span>.
+        </>
+      }
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -368,15 +381,8 @@ export function MemoryCard() {
           <RefreshIcon className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
-      </div>
-
-      <p className="mt-1.5 text-xs text-muted">
-        What Luxion remembers about you and your projects, and how retrieval feeds chat turns
-        (PRD §33.14, §58). Recalled memories and the files relevant to each question are injected
-        into the system prompt — both streams share one char budget. Changes apply when you press{' '}
-        <span className="text-ink">Save</span>.
-      </p>
-
+      }
+    >
       {error ? (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
           <AlertIcon className="mt-0.5 size-4 shrink-0" />
@@ -802,6 +808,6 @@ export function MemoryCard() {
           </div>
         </>
       ) : null}
-    </section>
+    </SettingsCard>
   )
 }

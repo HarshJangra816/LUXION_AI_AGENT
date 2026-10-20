@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertIcon, RefreshIcon, TerminalIcon } from '../../components/icons'
+import { SettingsCard } from '../../components/SettingsCard'
 import { ApiError } from '../../lib/api'
 import {
   getCodeConfig,
@@ -181,11 +182,12 @@ export function CodeCard() {
   }
 
   return (
-    <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <TerminalIcon className="size-4 text-tint" />
-          <h3 className="text-sm font-semibold text-ink">Coding agent</h3>
+    <SettingsCard
+      id="coding"
+      title="Coding agent"
+      icon={<TerminalIcon className="size-4 text-tint" />}
+      badge={
+        <>
           <span
             className={`rounded border px-1.5 py-0.5 font-mono text-[10px] tracking-wider uppercase ${
               status.enabled
@@ -207,7 +209,18 @@ export function CodeCard() {
               gh ok
             </span>
           ) : null}
-        </div>
+        </>
+      }
+      hint={
+        <>
+          Lets the model work on code: analyze a repository, grep it, edit files, run commands,
+          tests and installs, and use git and the GitHub CLI (PRD §34, §35). Turning this off
+          makes every <span className="font-mono text-[11px]">code</span> tool answer{' '}
+          <span className="text-ink">disabled</span>. Changes apply when you press{' '}
+          <span className="text-ink">Save</span>.
+        </>
+      }
+      actions={
         <button
           type="button"
           onClick={() => {
@@ -224,16 +237,8 @@ export function CodeCard() {
           <RefreshIcon className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
-      </div>
-
-      <p className="mt-1.5 text-xs text-muted">
-        Lets the model work on code: analyze a repository, grep it, edit files, run commands,
-        tests and installs, and use git and the GitHub CLI (PRD §34, §35). Turning this off
-        makes every <span className="font-mono text-[11px]">code</span> tool answer{' '}
-        <span className="text-ink">disabled</span>. Changes apply when you press{' '}
-        <span className="text-ink">Save</span>.
-      </p>
-
+      }
+    >
       {error ? (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
           <AlertIcon className="mt-0.5 size-4 shrink-0" />
@@ -351,6 +356,6 @@ export function CodeCard() {
           </button>
         </div>
       </div>
-    </section>
+    </SettingsCard>
   )
 }

@@ -20,6 +20,15 @@ export function PlusIcon({ className }: IconProps) {
   )
 }
 
+/** Down chevron — rotated by callers to mark collapse/expand state. */
+export function ChevronIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6 9.5l6 6 6-6" />
+    </svg>
+  )
+}
+
 export function TrashIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

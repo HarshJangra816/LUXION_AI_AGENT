@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AlertIcon, DesktopIcon, RefreshIcon } from '../../components/icons'
+import { SettingsCard } from '../../components/SettingsCard'
 import { ApiError } from '../../lib/api'
 import {
   getDesktopConfig,
@@ -181,11 +182,12 @@ export function DesktopCard() {
   }
 
   return (
-    <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <DesktopIcon className="size-4 text-tint" />
-          <h3 className="text-sm font-semibold text-ink">Desktop automation</h3>
+    <SettingsCard
+      id="desktop"
+      title="Desktop automation"
+      icon={<DesktopIcon className="size-4 text-tint" />}
+      badge={
+        <>
           <span
             className={`rounded border px-1.5 py-0.5 font-mono text-[10px] tracking-wider uppercase ${
               !status.supported
@@ -202,7 +204,18 @@ export function DesktopCard() {
               {status.windows} window{status.windows === 1 ? '' : 's'}
             </span>
           ) : null}
-        </div>
+        </>
+      }
+      hint={
+        <>
+          Lets the model drive this machine's apps — list and focus windows, read a window's
+          controls, press keys, type text, click and change volume or brightness (PRD §5.8,
+          §33.5). Turning this off makes every <span className="font-mono text-[11px]">desktop_*</span>{' '}
+          tool answer <span className="text-ink">disabled</span>. Changes apply when you press{' '}
+          <span className="text-ink">Save</span>.
+        </>
+      }
+      actions={
         <button
           type="button"
           onClick={() => {
@@ -219,16 +232,8 @@ export function DesktopCard() {
           <RefreshIcon className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
-      </div>
-
-      <p className="mt-1.5 text-xs text-muted">
-        Lets the model drive this machine's apps — list and focus windows, read a window's
-        controls, press keys, type text, click and change volume or brightness (PRD §5.8,
-        §33.5). Turning this off makes every <span className="font-mono text-[11px]">desktop_*</span>{' '}
-        tool answer <span className="text-ink">disabled</span>. Changes apply when you press{' '}
-        <span className="text-ink">Save</span>.
-      </p>
-
+      }
+    >
       {error ? (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
           <AlertIcon className="mt-0.5 size-4 shrink-0" />
@@ -370,6 +375,6 @@ export function DesktopCard() {
           </button>
         </div>
       </div>
-    </section>
+    </SettingsCard>
   )
 }

@@ -10,8 +10,8 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`) |
-| **Next phase** | Phase 10 per `prd.md` (Communication) |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages) |
+| **Next phase** | Phase 10 per `prd.md` (Communication) — decisions taken with user 2026-10-20: **SMTP+IMAP stdlib email**, **WhatsApp via Playwright Web + `whatsapp://` protocol**, **notifications via PowerShell toast (stdlib)** |
 | **Last updated** | 2026-10-20 (Phase 9 finished) |
 | **Backend tests** | **620 passing**, 2 skipped, `ruff check` + `ruff format --check` clean (177 files) — +59 from Phase 9, +2 speed-fix tests |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/web.ts` + `WebCard.tsx` added this session |
@@ -790,6 +790,43 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 
 ## Latest Update
+
+### UI restructure — collapsible settings cards + Tools/Integrations pages ✅ (2026-10-20)
+
+User request: the Settings page had grown to 12 sections — make the long
+cards collapsible ("dropdown") and move some content into main-menu pages.
+
+- **`components/SettingsCard.tsx` (new)** — shared collapsible card: header
+  is one toggle button (icon + title + badge + rotating `ChevronIcon`),
+  `actions` sit **outside** the toggle so Refresh/Test presses never collapse
+  the card; hint paragraph shows only while open; body stays **mounted** while
+  collapsed (no refetch on expand) but is hidden with the
+  `grid-rows-[0fr→1fr]` animation and marked `inert` (React 19 boolean) so
+  nothing inside is focusable. Open state persisted per card in
+  `localStorage["luxion.card.<id>"]`; **first card of a page defaults open,
+  rest collapsed** (user's pick). `ChevronIcon` added to `icons.tsx`.
+- **Nav split** (user's pick "Tools + Integrations"): `App.tsx` menu is now
+  Dashboard · Chat · Memory · **Tools** · **Integrations** · Settings.
+  - **`features/tools/ToolsPage.tsx` (new)** — Tools card (defaultOpen) +
+    Permissions & capabilities card (incl. calendar sources), moved verbatim
+    from Settings with all their state/handlers/`ToolRow`/`RiskBadge` helpers.
+  - **`features/integrations/IntegrationsPage.tsx` (new)** — loads the
+    capabilities report once (Voice's mic/speaker gates need it) and renders
+    Voice (defaultOpen) · Browser · Desktop · Coding · Web cards.
+  - **MemoryCard** was *already* rendered by `MemoryPage` — removing it from
+    Settings was pure dedup.
+  - **Settings** now = AI provider (defaultOpen) · Context & usage ·
+    Appearance · Graphics, all as `SettingsCard`s (~1520 → ~870 lines).
+- The 6 card components (Voice/Memory/Browser/Desktop/Code/Web) were
+  **converted in place**: their `<section>` + header + hint `<p>` became
+  `SettingsCard` props (`id` = voice/memory/browser/desktop/coding/web) —
+  bodies untouched. Voice's hint now points to *Tools → Permissions &
+  capabilities* for the hard gate.
+- Gates: `oxlint` clean (51 files), `tsc -b` + `vite build` exit 0.
+  **No browser eyeball yet** — ask the user to check the chevrons, the
+  collapsed-page length, and that Refresh buttons don't toggle their card.
+
+---
 
 ### Phase 9 — Web Intelligence (✅ done 2026-10-20, committed `ca27319`)
 

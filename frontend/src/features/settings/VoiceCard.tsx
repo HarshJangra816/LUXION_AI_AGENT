@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertIcon, MicIcon, MicOffIcon, RefreshIcon } from '../../components/icons'
+import { SettingsCard } from '../../components/SettingsCard'
 import type { CapabilityReport } from '../../lib/capabilities'
 import { useAIState } from '../../lib/aiState'
 import { ApiError } from '../../lib/api'
@@ -262,11 +263,13 @@ export function VoiceCard({ caps }: VoiceCardProps) {
   const levelWidth = `${Math.min(100, Math.round(level * 400))}%`
 
   return (
-    <section className="rounded-xl border border-white/12 bg-panel/75 p-5 backdrop-blur-xl">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <MicIcon className="size-4 text-tint" />
-          <h3 className="text-sm font-semibold text-ink">Voice</h3>
+    <SettingsCard
+      id="voice"
+      title="Voice"
+      icon={<MicIcon className="size-4 text-tint" />}
+      defaultOpen
+      badge={
+        <>
           {status ? (
             <span
               className={`rounded border px-1.5 py-0.5 font-mono text-[10px] tracking-wider uppercase ${
@@ -286,7 +289,17 @@ export function VoiceCard({ caps }: VoiceCardProps) {
               wake word live
             </span>
           ) : null}
-        </div>
+        </>
+      }
+      hint={
+        <>
+          Microphone → speech-to-text → wake word → reply → text-to-speech (PRD §26). Hardware is
+          still hard-gated in <span className="text-ink">Tools → Permissions &amp; capabilities</span>{' '}
+          — a denied mic or speaker blocks this card no matter what is set here. Changes apply when
+          you press <span className="text-ink">Save</span>.
+        </>
+      }
+      actions={
         <button
           type="button"
           onClick={() => void load()}
@@ -300,16 +313,8 @@ export function VoiceCard({ caps }: VoiceCardProps) {
           <RefreshIcon className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </button>
-      </div>
-
-      <p className="mt-1.5 text-xs text-muted">
-        Microphone → speech-to-text → wake word → reply → text-to-speech (PRD §26). Hardware is
-        still hard-gated in{' '}
-        <span className="text-ink">Permissions &amp; capabilities</span> — a denied mic or speaker
-        blocks this card no matter what is set here. Changes apply when you press{' '}
-        <span className="text-ink">Save</span>.
-      </p>
-
+      }
+    >
       {error ? (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2.5 text-xs text-danger">
           <AlertIcon className="mt-0.5 size-4 shrink-0" />
@@ -733,6 +738,6 @@ export function VoiceCard({ caps }: VoiceCardProps) {
           </div>
         </>
       ) : null}
-    </section>
+    </SettingsCard>
   )
 }
