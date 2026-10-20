@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `9ea817d`) |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`) |
 | **Next phase** | Phase 10 per `prd.md` (Communication) |
 | **Last updated** | 2026-10-20 (Phase 9 finished) |
 | **Backend tests** | **620 passing**, 2 skipped, `ruff check` + `ruff format --check` clean (177 files) — +59 from Phase 9, +2 speed-fix tests |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/web.ts` + `WebCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`, **Phase 9 as `9ea817d`**); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`, **Phase 9 as `ca27319`**); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
 | **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh) and **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless — no API-key settings exist in the Web family). Keep new phases on this diet. |
@@ -752,7 +752,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   news, movies, stock, clock, speed — speed reported 5.81 Mbps via DEL,
   ISP JKS BROADBAND). +2 tests in `test_web_sources.py` (colo shapes,
   headers sent).
-- [x] **Commit Phase 9 — done (2026-10-20, committed `9ea817d`)**: all of
+- [x] **Commit Phase 9 — done (2026-10-20, committed `ca27319`)**: all of
   `luxion/web/`, `webintel.py`, `WebConfig`/`web.json`, `/api/web`, `WebCard`,
   `.env.example` `LUXION_WEB__*`, the 3 new test files + updated tool sets,
   speed fix, memory.md.
@@ -782,7 +782,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 6 | Browser Agent | ✅ **done (2026-10-11, committed `9c240f9`)** — Playwright manager + 13 tools (`browser_*`, `youtube_*`, `wikipedia_*`), `browser.json` overlay, `/api/browser` routes, Settings → Browser card, 44 tests |
 | 7 | Computer Automation | ✅ **done (2026-10-15, committed `e528940`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
 | 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
-| 9 | Web Intelligence | ✅ **done (2026-10-20, committed `9ea817d`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
+| 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ⬜ |
 | 11 | Vision + Hardware | ⬜ |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
@@ -791,7 +791,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 ## Latest Update
 
-### Phase 9 — Web Intelligence (✅ done 2026-10-20, committed `9ea817d`)
+### Phase 9 — Web Intelligence (✅ done 2026-10-20, committed `ca27319`)
 
 - Built `backend/luxion/web/` (search → DuckDuckGo HTML, weather → Open-Meteo,
   news → RSS/Atom + HN, movies → TVMaze, finance → **Yahoo-only**, speed →
@@ -1545,7 +1545,7 @@ child; `LUXION_TEST_HARMLESS` does).
 
 ---
 
-## Phase 9 — Web Intelligence ✅ (2026-10-20, committed `9ea817d`)
+## Phase 9 — Web Intelligence ✅ (2026-10-20, committed `ca27319`)
 
 PRD §37 (Search/Weather/News/Movies/Finance/Time/Internet speed) + §38
 (financial *analysis*, not predictions). **Zero new Python dependencies**
@@ -1688,7 +1688,7 @@ over the shared UA) + `SPEED_HEADERS = {"Origin": "https://speed.cloudflare.com"
 `ruff check .` clean, `ruff format --check .` clean (**177 files**);
 frontend `oxlint` clean, `tsc -b` exit 0, `vite build` exit 0 (pre-existing
 chunk-size warning only); **7/7 tools live-verified**. **Committed as
-`9ea817d`; Web card not yet eyeballed in a running UI.**
+`ca27319`; Web card not yet eyeballed in a running UI.**
 
 ---
 
