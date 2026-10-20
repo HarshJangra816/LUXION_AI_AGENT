@@ -96,6 +96,9 @@ Everything below is **shipped and tested** (Phases 0–6):
 
 ## Quick start
 
+> Full walkthrough — prerequisites, model setup, first-run checklist, a guide
+> to every page, the permissions model and troubleshooting: **[SETUP.md](SETUP.md)**.
+
 ```powershell
 # 0. Config — copy .env.example to .env and edit (all vars prefixed LUXION_)
 copy .env.example .env

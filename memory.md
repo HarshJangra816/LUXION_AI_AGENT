@@ -825,6 +825,15 @@ cards collapsible ("dropdown") and move some content into main-menu pages.
 - Gates: `oxlint` clean (51 files), `tsc -b` + `vite build` exit 0.
   **No browser eyeball yet** — ask the user to check the chevrons, the
   collapsed-page length, and that Refresh buttons don't toggle their card.
+- **`SETUP.md` (new, 2026-10-20)** — full setup + user guide: prerequisites,
+  install (.env / venv / playwright chromium / npm), Ollama vs OpenRouter,
+  run options incl. Tauri, first-run checklist, page-by-page usage (post-restructure
+  nav), permissions model (4 layers), example prompts, config reference +
+  data-dir file table, verify commands (incl. `PYTHONIOENCODING`), troubleshooting
+  table, reset/uninstall. Linked from README Quick start. Facts verified against
+  `.env.example`, `pyproject.toml` (deps are all base-install; only `dev` extra),
+  `settings.py` (`data_dir = <repo>/database`), `scripts/dev.ps1` (no extras needed),
+  and no `docs_url` override (so `/docs` Swagger is live).
 
 ---
 
