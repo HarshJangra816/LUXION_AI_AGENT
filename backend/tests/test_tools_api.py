@@ -76,6 +76,15 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "stock_quote",
         "internet_speed",
         "world_clock",
+        # Phase 10 — communication (SMTP+IMAP, WhatsApp, notifications)
+        "email_draft",
+        "email_send",
+        "email_send_draft",
+        "email_read",
+        "whatsapp_send",
+        "whatsapp_read",
+        "whatsapp_open",
+        "notify",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"

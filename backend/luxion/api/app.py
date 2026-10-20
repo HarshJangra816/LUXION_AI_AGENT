@@ -17,14 +17,17 @@ from luxion.api.routes import (
     code,
     conversations,
     desktop,
+    email,
     health,
     llm,
     memory,
+    notify,
     repository,
     tools,
     usage,
     voice,
     web,
+    whatsapp,
 )
 from luxion.browser.manager import close_browser_manager
 from luxion.config.settings import get_settings
@@ -33,6 +36,7 @@ from luxion.llm.registry import aclose_provider
 from luxion.logging_setup import configure_logging
 from luxion.repository.indexer import schedule_index
 from luxion.voice.manager import close_voice_manager
+from luxion.whatsapp.manager import close_whatsapp_manager
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +63,7 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         await close_browser_manager()
+        await close_whatsapp_manager()
         close_voice_manager()
         await aclose_provider()
         dispose_engine()
@@ -96,6 +101,9 @@ def create_app() -> FastAPI:
     app.include_router(desktop.router, prefix=API_PREFIX)
     app.include_router(code.router, prefix=API_PREFIX)
     app.include_router(web.router, prefix=API_PREFIX)
+    app.include_router(email.router, prefix=API_PREFIX)
+    app.include_router(whatsapp.router, prefix=API_PREFIX)
+    app.include_router(notify.router, prefix=API_PREFIX)
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:

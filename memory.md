@@ -10,16 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages) |
-| **Next phase** | Phase 10 per `prd.md` (Communication) — decisions taken with user 2026-10-20: **SMTP+IMAP stdlib email**, **WhatsApp via Playwright Web + `whatsapp://` protocol**, **notifications via PowerShell toast (stdlib)** |
-| **Last updated** | 2026-10-20 (Phase 9 finished) |
-| **Backend tests** | **620 passing**, 2 skipped, `ruff check` + `ruff format --check` clean (177 files) — +59 from Phase 9, +2 speed-fix tests |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `pending`) |
+| **Next phase** | **All PRD core phases 0–10 complete.** Remaining PRD phases when wanted: **11 Vision + Hardware**, **12 3D Orb interaction** (core in place), **13 Advanced Agent**. Near-term follow-ups: eyeball the 3 new Integrations cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast on this machine |
+| **Last updated** | 2026-10-20 (Phase 10 finished) |
+| **Backend tests** | **711 passing**, 2 skipped (gh CLI, symlink), `ruff check` + `ruff format --check` clean (202 files) — +91 from Phase 10 |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/web.ts` + `WebCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`, **Phase 9 as `ca27319`**); README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch (Phase 7 as `e528940`, Phase 8 as `70f02ff`, Phase 9 as `ca27319`, **Phase 10 as `pending`**); README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
-| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh) and **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless — no API-key settings exist in the Web family). Keep new phases on this diet. |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless) and **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). Keep new phases on this diet. |
 
 ---
 
@@ -763,6 +763,21 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   persist through reload, Reset-to-.env restores defaults. Then in chat:
   "weather in tokyo" → `get_weather`; "top tech news" → `get_news`;
   "msft stock" → `stock_quote`; "what time in new york" → `world_clock`.
+- [ ] **Eyeball the 3 new Integrations cards** (Phase 10) — run
+  `.\scripts\dev.ps1`, open Integrations: **Email** (on/smtp/imap chips, Test
+  servers reports per-leg text, drafts list + delete, password row says
+  "not configured" until `.env` carries one), **WhatsApp** (Connect launches +
+  renders the QR, "scan qr" chip while polling /status every 3 s, flips to
+  "linked" after the phone scan, Close tears down), **Notifications** (Send
+  test fires a real toast, capability + platform chips). Card order:
+  Voice · Email · WhatsApp · Notifications · Browser · Desktop · Coding · Web.
+- [ ] **Live-verify Phase 10 transports** — email probe against a real mailbox
+  (Gmail needs an app password in `LUXION_EMAIL__SMTP_PASSWORD`), WhatsApp QR
+  login once, `email_send` to self. The toast path already fired for real via
+  `POST /api/notify/test` during development.
+- [ ] **WhatsApp DOM drift is a standing maintenance risk** — selectors live in
+  `luxion/whatsapp/web.py`; when WhatsApp Web redesigns, the `whatsapp_*`
+  tools fail with a message that points at the file.
 - [ ] `AI3DCore` chunk is 888 kB — acceptable for now (lazy-loaded), revisit
   before release.
 
@@ -783,13 +798,69 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 7 | Computer Automation | ✅ **done (2026-10-15, committed `e528940`)** — `luxion/desktop/` + 10 tools (`list_applications`, `focus_application`, `list_processes`, `inspect_window`, `click_element`, `press_keys`, `type_text`, `click_at`, `control_volume`, `control_brightness`), `input_control` capability, `desktop.json` overlay, `/api/desktop` routes, Settings → Desktop card, 26 tests; live-verified against real Notepad |
 | 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
 | 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
-| 10 | Communication | ⬜ |
+| 10 | Communication | ✅ **done (2026-10-20, committed `pending`)** — `luxion/email/` (smtplib send + imaplib read + MIME + drafts), `luxion/whatsapp/` (persistent Playwright Web session + DOM ops + `whatsapp://` protocol), `luxion/notify/` (PowerShell WinRT toast) + 8 tools (`email_draft`, `email_send`, `email_send_draft`, `email_read`, `whatsapp_send`, `whatsapp_read`, `whatsapp_open`, `notify`) → registry **62**, `EmailConfig`/`WhatsAppConfig`/`NotificationConfig` + `email.json`/`whatsapp.json`/`notify.json` overlays + `/api/email` (+ probe + drafts) + `/api/whatsapp` (+ session/QR/close) + `/api/notify` (+ test toast), Settings → Integrations gains **Email · WhatsApp · Notifications** cards, +91 tests, zero new deps; SMTP password env-only everywhere |
 | 11 | Vision + Hardware | ⬜ |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
 | 13 | Advanced Agent | ⬜ |
 
 
 ## Latest Update
+
+### Phase 10 — Communication (✅ done 2026-10-20, committed `pending`)
+
+User-confirmed transport choices: **email = SMTP + IMAP (stdlib)**,
+**WhatsApp = Playwright Web + `whatsapp://` protocol**, **notifications =
+PowerShell toast (stdlib)**. Zero new Python deps; no API keys anywhere.
+
+- **`backend/luxion/email/`** — `message.py` (MIME build: plain/html/both,
+  header-injection guard, typed + size-capped attachments, RFC 2047-safe,
+  signature; Bcc set as a header because smtplib strips it from the wire but
+  needs it to address delivery), `smtp_send.py` (SSL/STARTTLS/none, app-password
+  hint on auth failure, receipt with refused-recipient map), `imap_client.py`
+  (recent-N fetch, previews, subject query, `policy=default` parsing),
+  `drafts.py` (12-char id store in `<data_dir>/email_drafts/`).
+  **Secrets**: `smtp_password` never reaches the overlay, the API bundle
+  (model-serializer strips it), or the patch model (`extra="forbid"`);
+  resolution order = named `smtp_password_env` var → `LUXION_EMAIL__SMTP_PASSWORD`.
+- **`backend/luxion/whatsapp/`** — `manager.py` (own singleton with
+  `launch_persistent_context` at `<data_dir>/whatsapp_profile` — login survives
+  restarts; seams `set_whatsapp_launcher`/`reset_whatsapp_manager`),
+  `web.py` (search-box → composer → Enter DOM ops, QR grab, message read;
+  selector-drift error points at `luxion/whatsapp/web.py`),
+  `protocol.py` (`whatsapp://send?phone=&text=` deep link; Windows
+  `os.startfile`, fallback `https://wa.me/<phone>?text=…`).
+- **`backend/luxion/notify/toast.py`** — builds the WinRT toast XML, encodes it
+  UTF-16LE→base64 for `powershell.exe -EncodedCommand` (AUMID of the PS
+  shortcut), module-level cooldown, `run_script` subprocess seam.
+- **Tools** (registry **54 → 62**): `email_draft` medium, `email_send` /
+  `email_send_draft` high, `email_read` medium read-only, `whatsapp_send` high,
+  `whatsapp_read` medium read-only, `whatsapp_open` medium (protocol),
+  `notify` low + `requires="notifications"` (first non-desktop capability gate;
+  `test_only_gated_tools_declare_a_capability` updated).
+- **Routes** `/api/email` (+`POST /probe`, drafts list/delete),
+  `/api/whatsapp` (+`POST /session` → QR data-URL, `/status`, `/close`),
+  `/api/notify` (+`POST /test` fires a real toast) — all registered in
+  `app.py`; lifespan closes the WhatsApp manager. `.env.example` gained the
+  three sections.
+- **Frontend** — `lib/email.ts`/`whatsapp.ts`/`notify.ts` +
+  `EmailCard`/`WhatsAppCard`/`NotifyCard` (SettingsCard pattern, ids
+  email/whatsapp/notify) added to **Integrations** after Voice; WhatsApp card
+  shows the login QR from `POST /api/whatsapp/session` and polls `/status`
+  every 3 s until scanned; new `MailIcon`/`PhoneIcon`/`BellIcon`.
+- **Tests +91** (620 → 711 passing): `test_email.py` (MIME/injection/Bcc/
+  attachments, draft round-trip, fake-`smtplib`/`imaplib` flows incl. auth +
+  refused-recipient mapping, tools, API incl. patch-mirror + secret-absence
+  assertions), `test_whatsapp.py` (deep links, wa.me fallback, manager with
+  fake launcher/pages, DOM ops, selector drift, tools, session API),
+  `test_notify.py` (XML build/escape, encode round-trip, cooldown, capability
+  gate, tool, API) — plus registry-set updates in `test_tools.py` /
+  `test_tools_api.py`.
+- Gates: backend 711 passed / 2 skipped, ruff check + format clean (202 files);
+  frontend oxlint 0/0, `tsc -b` + `vite build` exit 0. Toast test endpoint was
+  exercised for real (`shown: True` — a Windows toast actually fired).
+- `SETUP.md` gained the three Integrations bullets, communication example
+  prompts, the env-var + data-dir rows (incl. `whatsapp_profile/`), and the
+  family list in the permissions section.
 
 ### UI restructure — collapsible settings cards + Tools/Integrations pages ✅ (2026-10-20)
 

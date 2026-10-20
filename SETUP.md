@@ -231,6 +231,22 @@ and Save:
 - **Voice** — push-to-talk vs. live mic, wake word ("hey luxion"), TTS on/off,
   voice picker with preview, wake-word sensitivity. Hardware is gated by the
   mic/speaker capabilities.
+- **Email** — send and read mail through your own account: SMTP to send
+  (smtplib), IMAP to read (imaplib), both stdlib. **Test servers** reaches both
+  legs once without sending anything; drafts created by the `email_draft` tool
+  are listed here until `email_send_draft` ships them. The password is **never**
+  typed into the UI — it lives in `.env` (`LUXION_EMAIL__SMTP_PASSWORD`) or in
+  the env var you name.
+- **WhatsApp** — message your contacts through WhatsApp Web (Playwright session
+  with a persistent profile — the login survives restarts). **Connect** launches
+  the session and shows the login **QR**: scan it once with your phone
+  (Settings → Linked devices). Sending is browser automation, so WhatsApp Web
+  redesigns can break it; the `whatsapp://` protocol hand-off to the desktop
+  app is the fallback path.
+- **Notifications** — Windows toast notifications raised through a stdlib-only
+  PowerShell call. **Send test** fires a real toast. Tune the title prefix,
+  on-screen duration, sound and the cooldown that guards against spam; the
+  **notifications** capability is the hard gate.
 - **Browser agent** — Playwright Chromium. Toggle enabled/headless (watch it
   work by turning headless off), search engine, timeouts. Powers
   `browser_*` and `youtube_*`; Wikipedia tools use plain HTTP and work even
@@ -274,9 +290,9 @@ Four layers, resolved **strictest-wins** for every tool call:
 1. **Capability hard gate** — OS privacy (mic, screen capture, location) and
    in-app consents (terminal, clipboard). Off ⇒ tool denied, always.
    Controlled in **Tools → Permissions & capabilities**.
-2. **Family master switch** — each family (browser / desktop / code / web) has
-   an enabled flag in its Integrations card. Off ⇒ that family's tools report
-   "disabled".
+2. **Family master switch** — each family (browser / desktop / code / web /
+   email / whatsapp / notify) has an enabled flag in its Integrations card.
+   Off ⇒ that family's tools report "disabled".
 3. **Autonomy level** (0–5, `LUXION_SECURITY__AUTONOMY_LEVEL`) — which risk
    tiers run without asking: `0 AnswerOnly` (no tools) … `5 AdvancedAutonomy`
    (most things run; high-risk still confirms).
@@ -314,6 +330,13 @@ to use):
 - "What windows do I have open?"
 - "Switch to my music player and pause it."
 - "Set volume to 30%."
+
+**Communication**
+- "Draft an email to alex@example.com summarising today's meeting — don't send
+  it yet."
+- "What came in my inbox since yesterday?"
+- "Message Dad on WhatsApp: I'm on my way."
+- "Notify me when the backup finishes."
 
 **Coding** (terminal capability must be ON)
 - "Analyse the repository at D:\Projects\my-app — what does it do?"
@@ -354,6 +377,9 @@ read from the project root.
 | Desktop | `LUXION_DESKTOP__ENABLED/UI_AUTOMATION/COORDINATE_FALLBACK/MAX_ELEMENTS` | Windows control |
 | Code | `LUXION_CODE__ENABLED/COMMAND_TIMEOUT_S/MAX_OUTPUT_CHARS` | coding agent |
 | Web | `LUXION_WEB__ENABLED/TIMEOUT_S/MAX_RESULTS/NEWS_ITEMS/SEARCH_REGION/TEMPERATURE_UNIT/SPEED_*` | the seven web sources |
+| Email | `LUXION_EMAIL__ENABLED/SMTP_HOST/SMTP_PORT/SMTP_SECURITY/SMTP_USERNAME/SMTP_PASSWORD/SMTP_PASSWORD_ENV/IMAP_HOST/IMAP_PORT/FROM_NAME/FROM_ADDRESS/SIGNATURE/TIMEOUT_S/READ_LIMIT` | send via SMTP, read via IMAP — the password lives in `.env` only, never in the overlay |
+| WhatsApp | `LUXION_WHATSAPP__ENABLED/HEADLESS/PROFILE_DIR/TIMEOUT_S/LOGIN_TIMEOUT_S` | WhatsApp Web automation (persistent login profile) |
+| Notifications | `LUXION_NOTIFY__ENABLED/APP_NAME/DEFAULT_DURATION_S/SOUND/COOLDOWN_S` | Windows toast notifications |
 | Logging | `LUXION_LOGGING__LEVEL/JSON_LOGS/CONSOLE` | log format + verbosity |
 
 ### Files in the data directory (`<project>\database` by default)
@@ -365,6 +391,8 @@ read from the project root.
 | `voice.json` | Voice card | voice/wake/TTS overrides |
 | `rag.json` | Memory card | embedding model, retrieval knobs |
 | `browser.json` / `desktop.json` / `code.json` / `web.json` | Integrations cards | per-family overrides |
+| `email.json` / `whatsapp.json` / `notify.json` | Integrations cards | communication overrides (never holds the SMTP password) |
+| `whatsapp_profile/` | WhatsApp session | the persistent browser profile — keeps the login |
 | `capabilities.json` | Permissions card | in-app capability consents |
 | `tool_log.jsonl` | tool framework | audit log (last 500 calls) |
 | `downloads/` | browser_download | files the agent downloads |
@@ -385,7 +413,7 @@ cd ..\frontend
 npm run lint
 npm run build
 
-# Live end-to-end tool check (needs Ollama running; exercises all 7 tool families)
+# Live end-to-end tool check (needs Ollama running; exercises every tool family)
 cd ..
 $env:PYTHONIOENCODING='utf-8'
 .\backend\.venv\Scripts\python.exe .\scripts\verify_tools_live.py

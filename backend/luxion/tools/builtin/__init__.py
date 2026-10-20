@@ -11,14 +11,17 @@ from luxion.tools.builtin.apps import BUILTIN_TOOLS as _APPS
 from luxion.tools.builtin.browser import BUILTIN_TOOLS as _BROWSER
 from luxion.tools.builtin.code import BUILTIN_TOOLS as _CODE
 from luxion.tools.builtin.desktop import BUILTIN_TOOLS as _DESKTOP
+from luxion.tools.builtin.email_tools import BUILTIN_TOOLS as _EMAIL
 from luxion.tools.builtin.files import BUILTIN_TOOLS as _FILES
 from luxion.tools.builtin.memories import BUILTIN_TOOLS as _MEMORIES
+from luxion.tools.builtin.notify_tools import BUILTIN_TOOLS as _NOTIFY
 from luxion.tools.builtin.repository import BUILTIN_TOOLS as _REPOSITORY
 from luxion.tools.builtin.screenshot import BUILTIN_TOOLS as _SCREENSHOT
 from luxion.tools.builtin.system import BUILTIN_TOOLS as _SYSTEM
 from luxion.tools.builtin.time_tools import BUILTIN_TOOLS as _TIME
 from luxion.tools.builtin.web import BUILTIN_TOOLS as _WEB
 from luxion.tools.builtin.webintel import BUILTIN_TOOLS as _WEBINTEL
+from luxion.tools.builtin.whatsapp_tools import BUILTIN_TOOLS as _WHATSAPP
 from luxion.tools.builtin.wikipedia import BUILTIN_TOOLS as _WIKIPEDIA
 from luxion.tools.builtin.youtube import BUILTIN_TOOLS as _YOUTUBE
 
@@ -34,6 +37,9 @@ BUILTIN_TOOLS: list[Tool] = [
     *_BROWSER,
     *_WIKIPEDIA,
     *_YOUTUBE,
+    *_EMAIL,
+    *_WHATSAPP,
+    *_NOTIFY,
     *_MEMORIES,
     *_REPOSITORY,
     *_CODE,

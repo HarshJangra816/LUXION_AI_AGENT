@@ -84,6 +84,15 @@ EXPECTED_BUILTIN_TOOLS = {
     "stock_quote",
     "internet_speed",
     "world_clock",
+    # Phase 10 — PRD §33.3/§33.4 communication (SMTP+IMAP, WhatsApp, toast)
+    "email_draft",
+    "email_send",
+    "email_send_draft",
+    "email_read",
+    "whatsapp_send",
+    "whatsapp_read",
+    "whatsapp_open",
+    "notify",
 }
 
 

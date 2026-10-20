@@ -202,7 +202,7 @@ def test_capability_allows_when_granted(settings: Settings, store: CapabilitySto
 
 
 def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
-    """Exactly the screen, input and terminal tools are gated behind a capability.
+    """Exactly the screen, input, terminal and notification tools are gated.
 
     Everything else runs on autonomy alone, so a capability toggle can never
     silently widen what a tool is allowed to do.
@@ -226,6 +226,7 @@ def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
         "git_commit": "terminal",
         "git_clone": "terminal",
         "github_prs": "terminal",
+        "notify": "notifications",
     }
 
 

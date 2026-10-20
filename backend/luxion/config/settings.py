@@ -47,8 +47,11 @@ from luxion.config import (
     browser_override,
     code_override,
     desktop_override,
+    email_override,
+    notify_override,
     rag_override,
     web_override,
+    whatsapp_override,
 )
 from luxion.config.provider_override import load_selection
 from luxion.config.voice_override import load_overrides, save_overrides
@@ -625,6 +628,154 @@ def _valid_web_values(values: dict[str, object]) -> dict[str, object]:
     return accepted
 
 
+class EmailConfig(BaseModel):
+    """Email policy (PRD §33.4, Phase 10).
+
+    SMTP (stdlib :mod:`smtplib`) sends, IMAP (stdlib :mod:`imaplib`) reads —
+    no new Python dependencies. Nothing here is filled in by default: the
+    family stays off until the user points it at a server, so a fresh install
+    never tries to talk to a mail host.
+
+    The SMTP password is **never** stored in ``email.json`` (the overlay the
+    API returns): it lives in ``.env`` as ``LUXION_EMAIL__SMTP_PASSWORD``, or
+    in whatever env var ``smtp_password_env`` names — the same rule as the LLM
+    API key (PRD §57 rule 6).
+    """
+
+    #: Master switch — off means every email tool errors out.
+    enabled: bool = False
+    #: Outgoing server, e.g. ``smtp.gmail.com`` / ``smtp.office365.com``.
+    smtp_host: str = ""
+    #: Outgoing port (587 STARTTLS, 465 SSL are the common pair).
+    smtp_port: int = Field(default=587, ge=1, le=65535)
+    #: How the SMTP session is secured.
+    smtp_security: Literal["starttls", "ssl", "none"] = "starttls"
+    #: SMTP login name; empty = the ``from_address``.
+    smtp_username: str = ""
+    #: Name of the env var that holds the SMTP password (preferred over the
+    #: inline ``smtp_password`` — lets the secret live outside ``.env``).
+    smtp_password_env: str = ""
+    #: Inline password from ``.env``; ignored once ``smtp_password_env`` is set.
+    smtp_password: str = ""
+    #: Inbox server, e.g. ``imap.gmail.com``. Empty = reading is unavailable.
+    imap_host: str = ""
+    #: Inbox port (993 SSL is the norm).
+    imap_port: int = Field(default=993, ge=1, le=65535)
+    #: Displayed sender name.
+    from_name: str = "Luxion"
+    #: Envelope sender; also the default SMTP login.
+    from_address: str = ""
+    #: Appended to outgoing plain-text bodies ("" = none).
+    signature: str = ""
+    #: Per-connection network budget for SMTP and IMAP.
+    timeout_s: float = Field(default=30.0, gt=0, le=120)
+    #: How many inbox messages ``email_read`` returns at most.
+    read_limit: int = Field(default=10, ge=1, le=50)
+
+
+#: Fields the UI/overlay may never write — credentials stay in the environment.
+EMAIL_SECRET_FIELDS = frozenset({"smtp_password"})
+
+
+def _valid_email_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`EmailConfig` field.
+
+    A hand-edited ``email.json`` must never take the app down; unknown keys,
+    secret fields and values pydantic rejects are simply ignored so ``.env``
+    keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in EmailConfig.model_fields or key in EMAIL_SECRET_FIELDS:
+            continue
+        try:
+            EmailConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
+class WhatsAppConfig(BaseModel):
+    """WhatsApp automation policy (PRD §33.3, Phase 10).
+
+    Two routes to a message (the user's confirmed choice): Playwright Web on
+    ``web.whatsapp.com`` with a **persistent profile** (login survives restarts
+    via ``<data_dir>/whatsapp_profile``), and the native ``whatsapp://``
+    protocol for handing a composed message to the desktop app. There is no
+    official send API that does not need Meta business onboarding, so this is
+    browser automation — subject to WhatsApp Web's DOM changing.
+    """
+
+    #: Master switch — off means every whatsapp tool errors out.
+    enabled: bool = True
+    #: Run the WhatsApp Web session without a visible window.
+    headless: bool = True
+    #: Profile directory holding the login session; empty = ``<data_dir>/whatsapp_profile``.
+    profile_dir: str = ""
+    #: Per-action budget (typing, searching, reading) in seconds.
+    timeout_s: float = Field(default=30.0, gt=0, le=120)
+    #: How long ``POST /whatsapp/session`` waits for a login to complete.
+    login_timeout_s: float = Field(default=90.0, gt=0, le=300)
+
+
+def _valid_whatsapp_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`WhatsAppConfig` field.
+
+    A hand-edited ``whatsapp.json`` must never take the app down; unknown keys
+    and values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in WhatsAppConfig.model_fields:
+            continue
+        try:
+            WhatsAppConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
+class NotificationConfig(BaseModel):
+    """Desktop-notification policy (Phase 10).
+
+    Toasts are raised through a stdlib-only PowerShell call into the Windows
+    WinRT toast API (:mod:`luxion.notify.toast`) — no new dependencies. The
+    ``notifications`` capability (PRD §39, default granted) is the hard gate
+    checked before any toast fires.
+    """
+
+    #: Master switch — off means the notify tool errors out.
+    enabled: bool = True
+    #: Title prefix on every toast.
+    app_name: str = "Luxion"
+    #: Seconds a toast stays on screen (Windows clamps to 25).
+    default_duration_s: int = Field(default=7, ge=3, le=25)
+    #: Play the default notification sound.
+    sound: bool = True
+    #: Minimum seconds between two toasts (spam guard for chatty turns).
+    cooldown_s: float = Field(default=2.0, ge=0, le=60)
+
+
+def _valid_notify_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`NotificationConfig` field.
+
+    A hand-edited ``notify.json`` must never take the app down; unknown keys
+    and values pydantic rejects are simply ignored so ``.env`` keeps winning.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in NotificationConfig.model_fields:
+            continue
+        try:
+            NotificationConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 def _valid_desktop_values(values: dict[str, object]) -> dict[str, object]:
     """Drop anything that is not a real :class:`DesktopConfig` field.
 
@@ -683,6 +834,9 @@ class Settings(BaseSettings):
     desktop: DesktopConfig = DesktopConfig()
     code: CodeConfig = CodeConfig()
     web: WebConfig = WebConfig()
+    email: EmailConfig = EmailConfig()
+    whatsapp: WhatsAppConfig = WhatsAppConfig()
+    notify: NotificationConfig = NotificationConfig()
     logging: LoggingConfig = LoggingConfig()
 
     @property
@@ -903,6 +1057,82 @@ def save_web_overrides(settings: Settings, values: dict[str, object]) -> None:
     reset_settings_cache()
 
 
+def apply_email_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Email edits onto ``settings.email``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/email.json`` wins over
+    ``LUXION_EMAIL__*`` exactly like the other overlays. Secret fields are
+    stripped by :func:`_valid_email_values`, so the password always comes from
+    the environment.
+    """
+    values = _valid_email_values(email_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.email = EmailConfig(**{**settings.email.model_dump(), **values})
+
+
+def save_email_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial email overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_email_values(values)
+    if valid:
+        email_override.save_overrides(
+            settings.app.data_dir,
+            {**email_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
+def apply_whatsapp_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → WhatsApp edits onto ``settings.whatsapp``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/whatsapp.json`` wins
+    over ``LUXION_WHATSAPP__*`` exactly like the other overlays.
+    """
+    values = _valid_whatsapp_values(whatsapp_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.whatsapp = WhatsAppConfig(**{**settings.whatsapp.model_dump(), **values})
+
+
+def save_whatsapp_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial WhatsApp overlay and refresh the cached settings."""
+    valid = _valid_whatsapp_values(values)
+    if valid:
+        whatsapp_override.save_overrides(
+            settings.app.data_dir,
+            {**whatsapp_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
+def apply_notify_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Notifications edits onto ``settings.notify``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/notify.json`` wins
+    over ``LUXION_NOTIFY__*`` exactly like the other overlays.
+    """
+    values = _valid_notify_values(notify_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.notify = NotificationConfig(**{**settings.notify.model_dump(), **values})
+
+
+def save_notify_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial notification overlay and refresh the cached settings."""
+    valid = _valid_notify_values(values)
+    if valid:
+        notify_override.save_overrides(
+            settings.app.data_dir,
+            {**notify_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
@@ -914,6 +1144,9 @@ def get_settings() -> Settings:
     apply_desktop_overrides(settings)
     apply_code_overrides(settings)
     apply_web_overrides(settings)
+    apply_email_overrides(settings)
+    apply_whatsapp_overrides(settings)
+    apply_notify_overrides(settings)
     return settings
 
 

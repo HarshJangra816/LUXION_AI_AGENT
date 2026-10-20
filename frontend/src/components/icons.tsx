@@ -205,3 +205,34 @@ export function MicOffIcon({ className }: IconProps) {
   )
 }
 
+/** Envelope — email integration. */
+export function MailIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <rect x="3" y="5.5" width="18" height="13" rx="2" />
+      <path d="M3.5 7l8.5 6 8.5-6" />
+    </svg>
+  )
+}
+
+/** Phone handset — WhatsApp / phone messaging. */
+export function PhoneIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z" />
+      <path d="M10 17.2h4" />
+    </svg>
+  )
+}
+
+/** Bell — desktop notifications. */
+export function BellIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14l1.5-2z" />
+      <path d="M10.2 20.5a2 2 0 0 0 3.6 0" />
+      <path d="M12 5.5V3.8" />
+    </svg>
+  )
+}
+
