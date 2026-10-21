@@ -11,8 +11,9 @@ on Windows APIs).
 A **local-first personal AI agent**: a FastAPI backend (Python 3.11+) with a
 React 19 + Vite frontend, packaged as an optional Tauri 2 desktop app. You
 chat with a local or cloud LLM; when a request needs an action, the model calls
-tools on your machine — files, browser, desktop apps, code, calendar and live
-web data. Every capability has a permission gate you control.
+one of **62 tools** on your machine — files, browser, desktop apps, code,
+calendar, live web data, email, WhatsApp and Windows notifications. Every
+capability has a permission gate you control.
 
 ---
 
@@ -20,7 +21,7 @@ web data. Every capability has a permission gate you control.
 
 | Requirement | Version | Needed for | Notes |
 |---|---|---|---|
-| **Windows** | 10/11 | everything | Desktop automation, TTS and clipboard are Windows-native |
+| **Windows** | 10/11 | everything | Desktop automation, TTS and toast notifications are Windows-native |
 | **Python** | 3.11+ | backend | `python --version` |
 | **Node.js** | 20+ (LTS ok) | frontend | `node --version` |
 | **Ollama** | latest | local LLM (recommended) | https://ollama.com — install pulls a background service |
@@ -28,8 +29,9 @@ web data. Every capability has a permission gate you control.
 | **git** | any | *optional* — coding-agent git/gh tools | git + GitHub CLI (`gh`) are detected and shown in Tools |
 
 Nothing else is required: all Python dependencies (voice, RAG, browser,
-desktop) install with the backend — there are no API keys for web tools (all
-seven web sources are keyless).
+desktop, web, e-mail) install with the backend — there are no API keys for the
+web tools (all seven web sources are keyless), and the communication tools
+(email, WhatsApp, notifications) use **your own accounts**, not a paid API.
 
 ---
 
@@ -151,17 +153,21 @@ window that hosts the same UI. For an installer: `npx tauri build`.
 3. **Settings → AI provider → Test connection** — verifies the model endpoint
    and lists the models it reports. If it fails, check §11 Troubleshooting.
 4. **Tools → Permissions & capabilities** — grant what you want the agent to
-   use. Notable defaults:
+   use. Nine capabilities are registered; notable defaults:
    - **Screen capture** is *prompted* — the model can't take screenshots until
      you press **Allow** here.
    - **Terminal** is **OFF** — command execution, tests, installs and git tools
      stay denied until you enable it (this is deliberate).
-   - **Microphone / speaker** — required for voice; **clipboard read** for
-     "summarise my clipboard".
+   - **Keyboard & mouse control** (`input_control`) gates the raw-injection
+     desktop tools (type, click, hotkeys).
+   - **Microphone / speaker** — required for voice; **camera / location** are
+     probed read-only from the Windows privacy settings.
 5. **Memory → Index files** — point it at a folder (e.g. a notes or project
    directory) so retrieval-augmented answers work. The first index downloads
    the embedding model once (~220 MB, cached).
-6. **Try it** — go to Chat and use one of the [example prompts](#8-example-prompts).
+6. **Integrations** — every family ships enabled **except e-mail**, which stays
+   off until you point it at an SMTP/IMAP server (see the Email card).
+7. **Try it** — go to Chat and use one of the [example prompts](#8-example-prompts).
 
 ---
 
@@ -184,8 +190,10 @@ The main surface.
   (tokens sent vs. the context budget).
 - **Tool chips.** When the model calls a tool you see the call as a chip —
   done → green outline, running → amber pulse, error → red.
-- **Confirmations.** Higher-risk actions pause and ask **Allow once / Allow
-  always / Deny** (180 s timeout). You are always in the loop.
+- **Confirmations.** Higher-risk actions pause and ask **Allow / Deny**
+  (180 s timeout, then they are refused). You are always in the loop. A tool
+  you always want can be switched to **Allow** in the Tools card instead
+  (`<data_dir>/tool_permissions.json`).
 - **Stop** aborts a reply mid-stream.
 - **Voice input** — the mic button has two modes (toggle in Settings →
   Integrations → Voice):
@@ -200,7 +208,7 @@ What Luxion remembers, and how retrieval works.
 
 - **Memory & knowledge card** (collapsible):
   - Create / list / search memories with kinds: `fact`, `preference`, `task`,
-    `note`, `project`, `instruction`.
+    `project`, `episode`.
   - **Repository index**: choose a folder, press **Index files**, then ask
     questions about that codebase — relevant files are injected into chat
     context automatically.
@@ -211,17 +219,18 @@ What Luxion remembers, and how retrieval works.
 
 Two collapsible cards:
 
-- **Tools** — the full catalog (~50 tools) grouped by family with risk badges
-  (low / medium / high / critical). Per-tool override: **Autonomy default /
-  Allow / Ask first / Deny**. "Recent tool activity" is the audit log (newest
-  first). Autonomy level and the high-risk guardrail still apply on top of
-  your choice — the stricter decision wins.
+- **Tools** — the full catalog (**62 tools**) grouped by family with risk
+  badges (low / medium / high / critical). Per-tool override: **Autonomy
+  default / Allow / Ask first / Deny**. "Recent tool activity" is the audit
+  log (newest first). Autonomy level and the high-risk guardrail still apply
+  on top of your choice — the stricter decision wins.
 - **Permissions & capabilities** — the *hard gate* that runs before tool
   permissions: when a capability is off, the matching tools are denied no
   matter what. Windows privacy switches (mic, screen capture) open in Windows
-  Settings; in-app consents (terminal, clipboard) are toggled right here.
-  Includes the **Calendar sources** panel: connect a local `.ics` file
-  (writable) or subscribe to a Google/Apple/Outlook iCal URL (read-only).
+  Settings; in-app consents (terminal, keyboard & mouse, notifications) are
+  toggled right here. Includes the **Calendar sources** panel: connect a local
+  `.ics` file (writable) or subscribe to a Google/Apple/Outlook iCal URL
+  (read-only).
 
 ### Integrations
 
@@ -232,11 +241,12 @@ and Save:
   voice picker with preview, wake-word sensitivity. Hardware is gated by the
   mic/speaker capabilities.
 - **Email** — send and read mail through your own account: SMTP to send
-  (smtplib), IMAP to read (imaplib), both stdlib. **Test servers** reaches both
-  legs once without sending anything; drafts created by the `email_draft` tool
-  are listed here until `email_send_draft` ships them. The password is **never**
+  (smtplib), IMAP to read (imaplib), both stdlib. The family ships **off**
+  until you fill in an SMTP/IMAP host. **Test servers** reaches both legs
+  once without sending anything; drafts created by the `email_draft` tool are
+  listed here until `email_send_draft` sends them. The password is **never**
   typed into the UI — it lives in `.env` (`LUXION_EMAIL__SMTP_PASSWORD`) or in
-  the env var you name.
+  the env var you name (`LUXION_EMAIL__SMTP_PASSWORD_ENV`).
 - **WhatsApp** — message your contacts through WhatsApp Web (Playwright session
   with a persistent profile — the login survives restarts). **Connect** launches
   the session and shows the login **QR**: scan it once with your phone
@@ -287,8 +297,9 @@ Every card remembers whether you left it open or closed, in your browser.
 
 Four layers, resolved **strictest-wins** for every tool call:
 
-1. **Capability hard gate** — OS privacy (mic, screen capture, location) and
-   in-app consents (terminal, clipboard). Off ⇒ tool denied, always.
+1. **Capability hard gate** — OS privacy (mic, camera, location) and in-app
+   consents (speaker, screen capture, notifications, keyboard & mouse, terminal,
+   calendar). Off ⇒ tool denied, always — no autonomy level can override it.
    Controlled in **Tools → Permissions & capabilities**.
 2. **Family master switch** — each family (browser / desktop / code / web /
    email / whatsapp / notify) has an enabled flag in its Integrations card.
@@ -300,8 +311,9 @@ Four layers, resolved **strictest-wins** for every tool call:
    plus the built-in guardrail that always asks for `high`/`critical` risk
    unless autonomy is 4–5 *and* you allowed it.
 
-A confirmation prompt always wins over everything — "Allow always" records the
-choice in `<data_dir>/tool_permissions.jsonl` so you are asked once.
+A confirmation prompt always wins over everything. If a tool always asks and
+you never want it to, set it to **Allow** in the Tools card — the choice is
+stored in `<data_dir>/tool_permissions.json` and survives restarts.
 
 ---
 
@@ -334,8 +346,9 @@ to use):
 **Communication**
 - "Draft an email to alex@example.com summarising today's meeting — don't send
   it yet."
+- "Send that draft to alex@example.com."
 - "What came in my inbox since yesterday?"
-- "Message Dad on WhatsApp: I'm on my way."
+- "WhatsApp +919812345678: I'm on my way."
 - "Notify me when the backup finishes."
 
 **Coding** (terminal capability must be ON)
@@ -392,9 +405,12 @@ read from the project root.
 | `rag.json` | Memory card | embedding model, retrieval knobs |
 | `browser.json` / `desktop.json` / `code.json` / `web.json` | Integrations cards | per-family overrides |
 | `email.json` / `whatsapp.json` / `notify.json` | Integrations cards | communication overrides (never holds the SMTP password) |
-| `whatsapp_profile/` | WhatsApp session | the persistent browser profile — keeps the login |
+| `calendar_sources.json` | Permissions card | connected `.ics` files and iCal subscriptions |
 | `capabilities.json` | Permissions card | in-app capability consents |
+| `tool_permissions.json` | Tools card | per-tool Allow / Ask / Deny overrides |
 | `tool_log.jsonl` | tool framework | audit log (last 500 calls) |
+| `email_drafts/` | `email_draft` tool | saved drafts (one JSON per draft) |
+| `whatsapp_profile/` | WhatsApp session | the persistent browser profile — keeps the login |
 | `downloads/` | browser_download | files the agent downloads |
 
 ---
@@ -402,9 +418,9 @@ read from the project root.
 ## 10. Verify your install (optional)
 
 ```powershell
-# Backend tests + lint
+# Backend tests + lint  (712 tests, ~40 s)
 cd backend
-.\.venv\Scripts\python.exe -m pytest          # ~10 min (slower suites included)
+.\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m ruff check .
 .\.venv\Scripts\python.exe -m ruff format --check .
 
@@ -413,14 +429,16 @@ cd ..\frontend
 npm run lint
 npm run build
 
-# Live end-to-end tool check (needs Ollama running; exercises every tool family)
+# Live API smoke — hit the running backend
 cd ..
-$env:PYTHONIOENCODING='utf-8'
-.\backend\.venv\Scripts\python.exe .\scripts\verify_tools_live.py
+Invoke-RestMethod http://127.0.0.1:8756/api/health
+Invoke-RestMethod http://127.0.0.1:8756/api/tools | Select-Object -ExpandProperty tools | Measure-Object
 ```
 
-(The `PYTHONIOENCODING` line matters on Windows — the console otherwise crashes
-printing tool results on cp1252.)
+(The full end-to-end tool check is an internal script — `scripts/verify_tools_live.py`
+— and lives outside the repo. If you write your own, set
+`$env:PYTHONIOENCODING='utf-8'` first: the console otherwise crashes printing
+tool results on cp1252.)
 
 ---
 
@@ -434,6 +452,10 @@ printing tool results on cp1252.)
 | Chat replies "hang" while streaming | You're running the backend with `--reload`; the dev reloader swallows streamed chunks. Start it without `--reload` (the default for `python -m luxion`). |
 | Browser tools answer "run `python -m playwright install chromium`" | Do exactly that with the venv's Python (§3.2). |
 | Terminal / run_command always denied | The **terminal** capability is off by default — enable it in **Tools → Permissions & capabilities**. |
+| Email tools answer "disabled" | The e-mail family ships **off** — fill in the SMTP/IMAP hosts in **Integrations → Email** and set `LUXION_EMAIL__ENABLED=true` in `.env`. |
+| Email tool says "authentication failed" | Most hosts want an **app password**, not the account password (Gmail: 2-Step Verification → App passwords). |
+| WhatsApp card shows no QR | **Connect** launches a fresh WhatsApp Web session; the QR appears once the page loads (up to ~15 s). It is rendered in the card from a screenshot, so headless is fine. Scan it from WhatsApp → Settings → Linked devices. |
+| Notifications do not appear | The **notifications** capability must be on, and Windows focus-assist/"Do not disturb" must be off. **Send test** fires a real toast. |
 | Voice mic does nothing | Grant the **microphone** capability; on first use the whisper model (~150 MB for `base.en`) downloads once. |
 | First memory index is slow | The embedding model (~220 MB) downloads once, then indexing is CPU-bound; watch the Memory card for progress. |
 | Wake word triggers while TTS speaks | Speaker echo — use headphones, or enable barge-in only in quiet rooms (Voice card). |
@@ -446,8 +468,8 @@ printing tool results on cp1252.)
   for more)
 - `<data_dir>/tool_log.jsonl` — every tool call with result + duration
 - Browser devtools console (F12) for frontend errors
-- `docs/API.md` — endpoint reference; `docs/PERMISSIONS.md` — permission
-  matrix; `docs/CHAT_STREAMING.md` — streaming protocol
+- http://127.0.0.1:8756/docs — the live Swagger/OpenAPI endpoint reference
+- [memory.md](memory.md) — phase notes, known gotchas and open follow-ups
 
 ---
 
@@ -466,5 +488,7 @@ printing tool results on cp1252.)
 
 ---
 
-Happy agenting. When you're ready for the next capability wave, Phase 10
-(Email, WhatsApp, Notifications) is next on the roadmap in `prd.md`.
+Happy agenting. Phases 0–10 are shipped and tested; the next capability wave
+is **Phase 11 — Vision + Hardware**, followed by Phase 12 (3D orb behaviour)
+and Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md) and the
+live status in [memory.md](memory.md).
