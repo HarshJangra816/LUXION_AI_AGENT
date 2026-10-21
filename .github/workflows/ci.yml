@@ -1,0 +1,76 @@
+name: CI
+
+# Every push and pull request runs the same gates CONTRIBUTING.md describes:
+# the backend test suite + ruff, and the frontend lint + build.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A newer push to the same branch makes the in-flight run obsolete.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (py${{ matrix.python-version }})
+    # The backend is Windows-first: pywinauto, pycaw/comtypes, sounddevice and
+    # pyttsx3 are Windows-only, so the suite runs on a Windows runner.
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # pyproject.toml declares requires-python = ">=3.11".
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+
+      - name: Install
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Ruff
+        working-directory: backend
+        run: |
+          python -m ruff check .
+          python -m ruff format --check .
+
+      - name: Pytest
+        working-directory: backend
+        run: python -m pytest
+
+  frontend:
+    name: Frontend (lint, build)
+    # The frontend is platform-agnostic, so it builds on the cheaper Linux runner.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          # SETUP.md asks for Node 20+; Vite 8 needs 20.19+ / 22.12+.
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
