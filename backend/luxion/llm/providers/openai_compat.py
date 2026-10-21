@@ -28,6 +28,7 @@ from luxion.llm.types import (
     TokenUsage,
     ToolCall,
     ToolSchema,
+    openai_message_payload,
 )
 
 
@@ -116,7 +117,7 @@ class OpenAICompatProvider(LLMProvider):
     ) -> AsyncIterator[StreamEvent]:
         payload: dict[str, Any] = {
             "model": model,
-            "messages": [message.as_provider_payload() for message in messages],
+            "messages": [openai_message_payload(message) for message in messages],
             "stream": True,
             "stream_options": {"include_usage": True},
             "temperature": self._temperature(temperature),

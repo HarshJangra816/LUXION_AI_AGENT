@@ -142,6 +142,38 @@ export function GlobeIcon({ className }: IconProps) {
   )
 }
 
+/** Eye - computer vision (Settings → Vision). */
+export function EyeIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+/** Camera - webcam capture (Settings → Vision). */
+export function CameraIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3 8.5A2 2 0 0 1 5 6.5h2.2l1.3-2h7l1.3 2H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  )
+}
+
+/** Fingerprint - biometric authentication (Settings → Auth). */
+export function FingerprintIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 10.5a2.5 2.5 0 0 1 2.5 2.5c0 2.2-.4 4.2-1.1 6" />
+      <path d="M8.8 20.4A13 13 0 0 0 9.5 13a2.5 2.5 0 0 1 5 0c0 1.4-.1 2.8-.4 4.1" />
+      <path d="M5.6 18.6A11.6 11.6 0 0 0 7 13a5 5 0 0 1 10 0c0 1.6-.1 3.1-.4 4.5" />
+      <path d="M4.1 14.6a8 8 0 0 1 1.4-3.3" />
+    </svg>
+  )
+}
+
 /** Desktop monitor + pointer - computer automation (Settings → Desktop). */
 export function DesktopIcon({ className }: IconProps) {
   return (

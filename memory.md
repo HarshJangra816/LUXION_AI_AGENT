@@ -10,11 +10,11 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`) |
-| **Next phase** | **All PRD core phases 0–10 complete.** Remaining PRD phases when wanted: **11 Vision + Hardware**, **12 3D Orb interaction** (core in place), **13 Advanced Agent**. Near-term follow-ups: eyeball the 3 new Integrations cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast on this machine |
-| **Last updated** | 2026-10-21 (docs refresh — README/SETUP.md synced to Phases 0–10; everything pushed to `origin/main`) |
-| **Backend tests** | **712 passing**, 1 skipped (gh CLI), `ruff check` + `ruff format --check` clean (202 files) — +91 from Phase 10 |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/web.ts` + `WebCard.tsx` added this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21) |
+| **Next phase** | **Phase 11b — camera capture + OCR** (adds `opencv-contrib-python`; optional `rapidocr-onnxruntime`), then **Phase 11c — voice + face authentication** (adds the `biometrics` capability). After that: **Phase 12 — 3D Orb interaction** (core in place), **Phase 13 — Advanced Agent**. Near-term follow-ups: eyeball the new Integrations cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast on this machine |
+| **Last updated** | 2026-10-21 (Phase 11a — vision core: image plumbing in the providers, `luxion/vision/`, `analyze_image` + `analyze_screenshot`, `/api/vision`, Settings → Vision card) |
+| **Backend tests** | **744 passing**, 1 skipped (gh CLI), `ruff check` + `ruff format --check` clean (210 files) — +32 from Phase 11a |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/vision.ts` + `VisionCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
 | **Git** | main branch, **all pushed to `origin/main`** (2026-10-21): Phase 9 as `ca27319`, **UI restructure as `3d8f77b` (own commit)**, SETUP.md as `fad6cb8`, Phase 10 as `87c65b1`, docs refresh as the last commit. Earlier: Phase 7 `e528940`, Phase 8 `70f02ff`. README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
@@ -799,12 +799,77 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
 | 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ✅ **done (2026-10-20, committed `87c65b1`)** — `luxion/email/` (smtplib send + imaplib read + MIME + drafts), `luxion/whatsapp/` (persistent Playwright Web session + DOM ops + `whatsapp://` protocol), `luxion/notify/` (PowerShell WinRT toast) + 8 tools (`email_draft`, `email_send`, `email_send_draft`, `email_read`, `whatsapp_send`, `whatsapp_read`, `whatsapp_open`, `notify`) → registry **62**, `EmailConfig`/`WhatsAppConfig`/`NotificationConfig` + `email.json`/`whatsapp.json`/`notify.json` overlays + `/api/email` (+ probe + drafts) + `/api/whatsapp` (+ session/QR/close) + `/api/notify` (+ test toast), Settings → Integrations gains **Email · WhatsApp · Notifications** cards, +91 tests, zero new deps; SMTP password env-only everywhere |
-| 11 | Vision + Hardware | ⬜ |
+| 11 | Vision + Hardware | 🚧 **11a done (2026-10-21)** — vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools (`analyze_image`, `analyze_screenshot`) → registry **64**, zero new deps, +32 tests. **11b** = camera + OCR (opencv-contrib-python). **11c** = voice/face auth (`biometrics` capability) |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
 | 13 | Advanced Agent | ⬜ |
 
 
 ## Latest Update
+
+### Phase 11a — Vision core (✅ done 2026-10-21)
+
+User-confirmed choices (asked before building): **vision transport = extend the
+existing providers**, **camera = `opencv-contrib-python`**, **OCR = vision
+model first + optional RapidOCR**, **auth = voice + face, zero extra deps
+beyond OpenCV**. Phase 11 ships as **11a → 11b → 11c**.
+
+**11a (this session) — the vision core. Zero new Python dependencies.**
+
+- **`luxion/llm/types.py`** — new `ImagePayload` (`data` = raw base64, no
+  `data:` prefix, + `data_url` property) and `ChatMessage.images`.
+  Two provider-shaped helpers so the picture travels the *existing* contract:
+  `ollama_message_payload()` → sibling `images[]` array of base64 strings;
+  `openai_message_payload()` → the multimodal `content` array
+  (`text` part + one `image_url` part per image). `as_provider_payload()` is
+  untouched, so text-only messages are byte-identical to before.
+- **`luxion/llm/providers/ollama.py` + `openai_compat.py`** — one-line switch
+  to the new helpers. `OpenRouterProvider` inherits the OpenAI shape.
+- **`backend/luxion/vision/`** — new package.
+  `imaging.py`: decode (path / bytes / PIL image) → EXIF transpose → downscale
+  to `max_dimension` → encode (PNG, JPEG fallback) → base64. Pure Pillow.
+  `analyzer.py`: `resolve_vision_llm()` derives `(endpoint, model)` from
+  `VisionConfig` (a vision model may differ from the chat model, and the
+  endpoint may be a different provider entirely), `analyze_images()` calls
+  `provider.complete()`, `probe_vision()` lists the models without spending a
+  vision call.
+- **`VisionConfig`** (in `settings.py`) + `luxion/config/vision_override.py`
+  (`<data_dir>/vision.json`) + `apply_vision_overrides` / `save_vision_overrides`
+  wired into `get_settings()`. Knobs: `enabled`, `model`, `provider`,
+  `base_url`, `api_key_env`, `prompt`, `max_images`, `max_dimension`,
+  `max_bytes`, `timeout_s`.
+- **Tools** — `analyze_image` (low, read-only, workspace-scoped) and
+  `analyze_screenshot` (low, read-only, **`requires="screen_capture"`**) in
+  `tools/builtin/vision.py`. Registry **62 → 64**. `take_screenshot`'s
+  capture helper was renamed `grab_screen()` so both tools share it.
+- **`/api/vision`** — `GET` (bundle), `PUT /config` (partial overlay,
+  `extra="forbid"`), `DELETE /config`, `POST /probe` (reachability, no vision
+  call), `POST /analyze` (the live action: a file or the screen).
+- **Frontend** — `lib/vision.ts`, `features/settings/VisionCard.tsx`
+  (access / endpoint / limits / default prompt / "Test endpoint" / "Analyze
+  screen"), `EyeIcon` + `CameraIcon` + `FingerprintIcon` in `icons.tsx`, and
+  **Vision** appended to the Integrations page after Web.
+- **Tests** — `tests/test_vision.py` (21) + `tests/test_vision_api.py` (11).
+  Suite **713 → 745** (744 passing, 1 skipped).
+- **Env** — `LUXION_VISION__*` documented in `.env.example`.
+
+**Still to come in Phase 11**
+
+- **11b — camera + OCR.** `luxion/vision/camera.py` (OpenCV webcam capture;
+  the machine has an **HP True Vision FHD Camera**, so this is live-verifiable),
+  `luxion/vision/ocr.py` (RapidOCR when installed, else the vision model
+  transcribes), tools `capture_camera` + `ocr_image`, `camera` capability
+  wiring. **Adds `opencv-contrib-python`** (one dep: camera + Haar + SFace)
+  and optionally `rapidocr-onnxruntime`.
+- **11c — authentication.** `luxion/vision/auth.py`: voiceprint = MFCC + DTW
+  over **scipy** (already installed) and face = OpenCV **SFace** embeddings,
+  both behind a new **`biometrics`** capability (default OFF). Tools
+  `enroll_voice` / `verify_voice` / `enroll_face` / `verify_face`,
+  `/api/auth` routes, `AuthCard`. **Zero extra deps beyond OpenCV.**
+  `resemblyzer` was rejected — it pins `librosa<0.11` and would downgrade the
+  librosa 1.0.0 that OmniVoice needs.
+
+**Capability count stays 9 in 11a** (`analyze_screenshot` reuses the existing
+`screen_capture`); 11c adds `biometrics` → 10.
 
 ### Phase 10 — Communication (✅ done 2026-10-20, committed `87c65b1`)
 

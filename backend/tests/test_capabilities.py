@@ -214,6 +214,7 @@ def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
     }
     assert declared == {
         "take_screenshot": "screen_capture",
+        "analyze_screenshot": "screen_capture",
         "click_element": "input_control",
         "press_keys": "input_control",
         "type_text": "input_control",

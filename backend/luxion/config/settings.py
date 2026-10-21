@@ -50,6 +50,7 @@ from luxion.config import (
     email_override,
     notify_override,
     rag_override,
+    vision_override,
     web_override,
     whatsapp_override,
 )
@@ -628,6 +629,71 @@ def _valid_web_values(values: dict[str, object]) -> dict[str, object]:
     return accepted
 
 
+#: Instruction sent to the vision model when the caller does not give one.
+DEFAULT_VISION_PROMPT = (
+    "Describe this image in detail. Mention any text you can read, the layout, "
+    "and anything that stands out."
+)
+
+
+class VisionConfig(BaseModel):
+    """Vision policy (PRD §5.9, §33.15, Phase 11).
+
+    The vision tools (``analyze_image``, ``analyze_screenshot``) read these
+    knobs. ``enabled`` is the master switch — off means every one of them
+    refuses to run and tells the model where to turn it back on.
+
+    ``model`` is the **vision** model id. Empty means "use the chat model",
+    which only works when that model can actually see — a local Ollama
+    deployment usually wants a separate one (``qwen2.5vl:3b``,
+    ``llama3.2-vision``, ``minicpm-v``). ``provider`` empty means "use the
+    active adapter", so a local chat model can be paired with a cloud vision
+    model (or the other way round).
+
+    Zero new Python dependencies: images ride along the existing provider
+    contract (:class:`luxion.llm.types.ImagePayload`).
+    """
+
+    #: Master switch — off means every vision tool errors out.
+    enabled: bool = True
+    #: Vision model id; empty = reuse the chat model.
+    model: str = ""
+    #: Provider id override; empty = the active LLM adapter.
+    provider: str = ""
+    #: Endpoint override; empty = the active adapter's URL.
+    base_url: str = ""
+    #: Env var holding the vision endpoint's key; empty = the active adapter's.
+    api_key_env: str = ""
+    #: Default instruction used when the caller does not supply one.
+    prompt: str = DEFAULT_VISION_PROMPT
+    #: Images attached to a single request (1–8).
+    max_images: int = Field(default=4, ge=1, le=8)
+    #: Longest edge, in pixels, before an image is downscaled.
+    max_dimension: int = Field(default=1568, ge=256, le=4096)
+    #: Largest encoded image Luxion will send (bytes).
+    max_bytes: int = Field(default=8_000_000, ge=100_000, le=50_000_000)
+    #: Per-request budget for the vision model (seconds).
+    timeout_s: float = Field(default=120.0, gt=0, le=600)
+
+
+def _valid_vision_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`VisionConfig` field.
+
+    Same rule as :func:`_valid_web_values`: a hand-edited ``vision.json``
+    must never take the app down.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in VisionConfig.model_fields:
+            continue
+        try:
+            VisionConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 class EmailConfig(BaseModel):
     """Email policy (PRD §33.4, Phase 10).
 
@@ -834,6 +900,7 @@ class Settings(BaseSettings):
     desktop: DesktopConfig = DesktopConfig()
     code: CodeConfig = CodeConfig()
     web: WebConfig = WebConfig()
+    vision: VisionConfig = VisionConfig()
     email: EmailConfig = EmailConfig()
     whatsapp: WhatsAppConfig = WhatsAppConfig()
     notify: NotificationConfig = NotificationConfig()
@@ -1057,6 +1124,34 @@ def save_web_overrides(settings: Settings, values: dict[str, object]) -> None:
     reset_settings_cache()
 
 
+def apply_vision_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Vision edits onto ``settings.vision``.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/vision.json`` wins over
+    ``LUXION_VISION__*`` exactly like the other overlays.
+    """
+    values = _valid_vision_values(vision_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.vision = VisionConfig(**{**settings.vision.model_dump(), **values})
+
+
+def save_vision_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial vision overlay and refresh the cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_voice_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_vision_values(values)
+    if valid:
+        vision_override.save_overrides(
+            settings.app.data_dir,
+            {**vision_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 def apply_email_overrides(settings: Settings) -> None:
     """Overlay the persisted Settings → Email edits onto ``settings.email``.
 
@@ -1144,6 +1239,7 @@ def get_settings() -> Settings:
     apply_desktop_overrides(settings)
     apply_code_overrides(settings)
     apply_web_overrides(settings)
+    apply_vision_overrides(settings)
     apply_email_overrides(settings)
     apply_whatsapp_overrides(settings)
     apply_notify_overrides(settings)

@@ -5,16 +5,17 @@ import { CodeCard } from '../settings/CodeCard'
 import { DesktopCard } from '../settings/DesktopCard'
 import { EmailCard } from '../settings/EmailCard'
 import { NotifyCard } from '../settings/NotifyCard'
+import { VisionCard } from '../settings/VisionCard'
 import { VoiceCard } from '../settings/VoiceCard'
 import { WebCard } from '../settings/WebCard'
 import { WhatsAppCard } from '../settings/WhatsAppCard'
 
 /**
  * Everything Luxion can drive outside itself: voice, communication (email,
- * WhatsApp, notifications), browser, desktop, coding and web intelligence.
- * Each card is self-contained (own fetch + save) and collapsible; Voice needs
- * the capabilities report for its mic/speaker gates, which is loaded once
- * here.
+ * WhatsApp, notifications), browser, desktop, coding, web intelligence and
+ * vision. Each card is self-contained (own fetch + save) and collapsible;
+ * Voice needs the capabilities report for its mic/speaker gates, which is
+ * loaded once here.
  */
 export function IntegrationsPage() {
   const [caps, setCaps] = useState<CapabilityReport | null>(null)
@@ -44,6 +45,7 @@ export function IntegrationsPage() {
       <DesktopCard />
       <CodeCard />
       <WebCard />
+      <VisionCard />
     </div>
   )
 }

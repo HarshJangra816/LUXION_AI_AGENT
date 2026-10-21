@@ -139,6 +139,8 @@ _TARGET_ARGS = {
     "open_application": "name",
     "close_application": "name",
     "take_screenshot": "path",
+    "analyze_image": "path",
+    "analyze_screenshot": "path",
 }
 
 

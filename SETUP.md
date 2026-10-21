@@ -11,9 +11,9 @@ on Windows APIs).
 A **local-first personal AI agent**: a FastAPI backend (Python 3.11+) with a
 React 19 + Vite frontend, packaged as an optional Tauri 2 desktop app. You
 chat with a local or cloud LLM; when a request needs an action, the model calls
-one of **62 tools** on your machine — files, browser, desktop apps, code,
-calendar, live web data, email, WhatsApp and Windows notifications. Every
-capability has a permission gate you control.
+one of **64 tools** on your machine — files, browser, desktop apps, code,
+calendar, live web data, email, WhatsApp, Windows notifications and **image
+analysis**. Every capability has a permission gate you control.
 
 ---
 
@@ -219,7 +219,7 @@ What Luxion remembers, and how retrieval works.
 
 Two collapsible cards:
 
-- **Tools** — the full catalog (**62 tools**) grouped by family with risk
+- **Tools** — the full catalog (**64 tools**) grouped by family with risk
   badges (low / medium / high / critical). Per-tool override: **Autonomy
   default / Allow / Ask first / Deny**. "Recent tool activity" is the audit
   log (newest first). Autonomy level and the high-risk guardrail still apply
@@ -270,6 +270,16 @@ and Save:
 - **Web intelligence** — seven keyless sources: web search, weather, news,
   movies, finance, internet speed, world clock. **Test sources** probes each
   one live and reports per-tool latency.
+- **Vision** — let Luxion *look*. Name a **vision model** (`qwen2.5vl:3b`,
+  `llama3.2-vision`, `minicpm-v`, `llava:7b` …) and the `analyze_image` /
+  `analyze_screenshot` tools hand pictures to it. The call rides the **same
+  provider you already use**, so there is no new dependency and usually no new
+  API key — a local vision model can sit next to a cloud chat model (fill
+  **Endpoint** to point somewhere else). **Test endpoint** checks the model is
+  there without spending a vision call; **Analyze screen** captures the
+  display and shows the answer (needs the screen-capture consent). Limits:
+  images per request, longest edge, max payload, timeout, plus the **default
+  prompt** used when the model asks nothing specific.
 
 ### Settings
 
@@ -359,6 +369,11 @@ to use):
 **Calendar**
 - "What's on my calendar this week?"
 
+**Vision** (name a vision model in Integrations → Vision first)
+- "Look at D:\Projects\my-app\docs\diagram.png and explain the architecture."
+- "What's on my screen right now?"
+- "Read the text in this screenshot and list the errors."
+
 **Voice** — press the mic (or say "Hey Luxion") and speak any of the above.
 
 ---
@@ -390,6 +405,7 @@ read from the project root.
 | Desktop | `LUXION_DESKTOP__ENABLED/UI_AUTOMATION/COORDINATE_FALLBACK/MAX_ELEMENTS` | Windows control |
 | Code | `LUXION_CODE__ENABLED/COMMAND_TIMEOUT_S/MAX_OUTPUT_CHARS` | coding agent |
 | Web | `LUXION_WEB__ENABLED/TIMEOUT_S/MAX_RESULTS/NEWS_ITEMS/SEARCH_REGION/TEMPERATURE_UNIT/SPEED_*` | the seven web sources |
+| Vision | `LUXION_VISION__ENABLED/MODEL/PROVIDER/BASE_URL/API_KEY_ENV/PROMPT/MAX_IMAGES/MAX_DIMENSION/MAX_BYTES/TIMEOUT_S` | the vision model + image limits (the model call reuses your chat provider, so no new key is usually needed) |
 | Email | `LUXION_EMAIL__ENABLED/SMTP_HOST/SMTP_PORT/SMTP_SECURITY/SMTP_USERNAME/SMTP_PASSWORD/SMTP_PASSWORD_ENV/IMAP_HOST/IMAP_PORT/FROM_NAME/FROM_ADDRESS/SIGNATURE/TIMEOUT_S/READ_LIMIT` | send via SMTP, read via IMAP — the password lives in `.env` only, never in the overlay |
 | WhatsApp | `LUXION_WHATSAPP__ENABLED/HEADLESS/PROFILE_DIR/TIMEOUT_S/LOGIN_TIMEOUT_S` | WhatsApp Web automation (persistent login profile) |
 | Notifications | `LUXION_NOTIFY__ENABLED/APP_NAME/DEFAULT_DURATION_S/SOUND/COOLDOWN_S` | Windows toast notifications |
@@ -404,6 +420,7 @@ read from the project root.
 | `voice.json` | Voice card | voice/wake/TTS overrides |
 | `rag.json` | Memory card | embedding model, retrieval knobs |
 | `browser.json` / `desktop.json` / `code.json` / `web.json` | Integrations cards | per-family overrides |
+| `vision.json` | Vision card | vision model, endpoint and image limits |
 | `email.json` / `whatsapp.json` / `notify.json` | Integrations cards | communication overrides (never holds the SMTP password) |
 | `calendar_sources.json` | Permissions card | connected `.ics` files and iCal subscriptions |
 | `capabilities.json` | Permissions card | in-app capability consents |
@@ -418,7 +435,7 @@ read from the project root.
 ## 10. Verify your install (optional)
 
 ```powershell
-# Backend tests + lint  (712 tests, ~40 s)
+# Backend tests + lint  (745 tests, ~40 s)
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m ruff check .
@@ -459,6 +476,8 @@ tool results on cp1252.)
 | Voice mic does nothing | Grant the **microphone** capability; on first use the whisper model (~150 MB for `base.en`) downloads once. |
 | First memory index is slow | The embedding model (~220 MB) downloads once, then indexing is CPU-bound; watch the Memory card for progress. |
 | Wake word triggers while TTS speaks | Speaker echo — use headphones, or enable barge-in only in quiet rooms (Voice card). |
+| `analyze_image` answers "vision is turned off" | Turn the family on in **Integrations → Vision** (or `LUXION_VISION__ENABLED=true`). |
+| `analyze_image` answers "no model" / gibberish | The chat model can't see. Set **Vision model** to a vision checkpoint (`ollama pull qwen2.5vl:3b`) and press **Test endpoint**. |
 | Weird `�` crashes in PowerShell scripts | Set `$env:PYTHONIOENCODING='utf-8'` before running Python scripts by hand. |
 | Chat answer mentions "thinking" but never answers | A reasoning model with `LUXION_LLM__THINK=true`; set it to `false` (default) until you want raw thinking streams. |
 
@@ -488,7 +507,8 @@ tool results on cp1252.)
 
 ---
 
-Happy agenting. Phases 0–10 are shipped and tested; the next capability wave
-is **Phase 11 — Vision + Hardware**, followed by Phase 12 (3D orb behaviour)
-and Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md) and the
-live status in [memory.md](memory.md).
+Happy agenting. Phases 0–10 are shipped and tested, and **Phase 11a (the
+vision core)** landed on top of them; **11b (camera + OCR)** and **11c (voice +
+face authentication)** are next, followed by Phase 12 (3D orb behaviour) and
+Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md) and the live
+status in [memory.md](memory.md).

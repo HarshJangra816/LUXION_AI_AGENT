@@ -93,6 +93,9 @@ EXPECTED_BUILTIN_TOOLS = {
     "whatsapp_read",
     "whatsapp_open",
     "notify",
+    # Phase 11 — PRD §5.9/§33.15 vision (screenshot analysis + image reading)
+    "analyze_image",
+    "analyze_screenshot",
 }
 
 

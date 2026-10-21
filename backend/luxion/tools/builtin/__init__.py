@@ -19,6 +19,7 @@ from luxion.tools.builtin.repository import BUILTIN_TOOLS as _REPOSITORY
 from luxion.tools.builtin.screenshot import BUILTIN_TOOLS as _SCREENSHOT
 from luxion.tools.builtin.system import BUILTIN_TOOLS as _SYSTEM
 from luxion.tools.builtin.time_tools import BUILTIN_TOOLS as _TIME
+from luxion.tools.builtin.vision import BUILTIN_TOOLS as _VISION
 from luxion.tools.builtin.web import BUILTIN_TOOLS as _WEB
 from luxion.tools.builtin.webintel import BUILTIN_TOOLS as _WEBINTEL
 from luxion.tools.builtin.whatsapp_tools import BUILTIN_TOOLS as _WHATSAPP
@@ -29,6 +30,7 @@ BUILTIN_TOOLS: list[Tool] = [
     *_TIME,
     *_SYSTEM,
     *_SCREENSHOT,
+    *_VISION,
     *_FILES,
     *_APPS,
     *_DESKTOP,

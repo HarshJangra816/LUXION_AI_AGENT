@@ -25,6 +25,7 @@ from luxion.api.routes import (
     repository,
     tools,
     usage,
+    vision,
     voice,
     web,
     whatsapp,
@@ -101,6 +102,7 @@ def create_app() -> FastAPI:
     app.include_router(desktop.router, prefix=API_PREFIX)
     app.include_router(code.router, prefix=API_PREFIX)
     app.include_router(web.router, prefix=API_PREFIX)
+    app.include_router(vision.router, prefix=API_PREFIX)
     app.include_router(email.router, prefix=API_PREFIX)
     app.include_router(whatsapp.router, prefix=API_PREFIX)
     app.include_router(notify.router, prefix=API_PREFIX)

@@ -27,6 +27,7 @@ from luxion.llm.types import (
     TokenUsage,
     ToolCall,
     ToolSchema,
+    ollama_message_payload,
 )
 
 
@@ -75,7 +76,7 @@ class OllamaProvider(LLMProvider):
     ) -> AsyncIterator[StreamEvent]:
         payload: dict[str, Any] = {
             "model": model,
-            "messages": [message.as_provider_payload() for message in messages],
+            "messages": [ollama_message_payload(message) for message in messages],
             "stream": True,
             "think": bool(self.config.think),
             "options": {

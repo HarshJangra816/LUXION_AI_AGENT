@@ -17,6 +17,23 @@ Role = Literal["system", "user", "assistant", "tool"]
 ToolSchema = dict[str, Any]
 
 
+class ImagePayload(BaseModel):
+    """One image attached to a chat turn (PRD §5.9 vision models).
+
+    ``data`` is **raw base64** without a ``data:`` prefix — Ollama's
+    ``/api/chat`` wants exactly that, and the OpenAI-compatible side is
+    derived from it via :attr:`data_url`.
+    """
+
+    data: str
+    mime: str = "image/png"
+
+    @property
+    def data_url(self) -> str:
+        """``data:<mime>;base64,<data>`` — the OpenAI ``image_url`` form."""
+        return f"data:{self.mime};base64,{self.data}"
+
+
 class ToolCall(BaseModel):
     """One function invocation requested by the model (PRD §3.1)."""
 
@@ -57,6 +74,9 @@ class ChatMessage(BaseModel):
     tool_calls: list[ToolCall] | None = None
     #: Set on a ``role="tool"`` message: the call it answers.
     tool_call_id: str | None = None
+    #: Images attached to this turn (PRD §5.9). Providers that cannot see
+    #: pictures ignore them — the chat tools keep working unchanged.
+    images: list[ImagePayload] = Field(default_factory=list)
 
     def as_provider_payload(self) -> dict[str, Any]:
         payload: dict[str, Any] = {"role": self.role, "content": self.content}
@@ -65,6 +85,36 @@ class ChatMessage(BaseModel):
         if self.tool_call_id:
             payload["tool_call_id"] = self.tool_call_id
         return payload
+
+
+def ollama_message_payload(message: ChatMessage) -> dict[str, Any]:
+    """Shape one message for Ollama's ``/api/chat``.
+
+    Ollama takes images as a sibling ``images[]`` array of base64 strings
+    (no ``data:`` prefix), which is why the images live on the message rather
+    than inside ``content``.
+    """
+    payload = message.as_provider_payload()
+    if message.images:
+        payload["images"] = [image.data for image in message.images]
+    return payload
+
+
+def openai_message_payload(message: ChatMessage) -> dict[str, Any]:
+    """Shape one message for ``/v1/chat/completions``.
+
+    OpenAI-compatible endpoints want the multimodal ``content`` array: one
+    ``text`` part followed by one ``image_url`` part per image.
+    """
+    payload = message.as_provider_payload()
+    if not message.images:
+        return payload
+    content: list[dict[str, Any]] = [{"type": "text", "text": payload["content"]}]
+    content.extend(
+        {"type": "image_url", "image_url": {"url": image.data_url}} for image in message.images
+    )
+    payload["content"] = content
+    return payload
 
 
 class TokenUsage(BaseModel):

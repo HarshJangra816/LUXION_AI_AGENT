@@ -10,9 +10,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/phase-10%20%C2%B7%20communication-0ea5e9?style=flat-square&labelColor=020a16" alt="Phase 10" />
-  <img src="https://img.shields.io/badge/tests-712%20passed-10b981?style=flat-square&labelColor=020a16" alt="712 tests passing" />
-  <img src="https://img.shields.io/badge/tools-62-10b981?style=flat-square&labelColor=020a16" alt="62 tools" />
+  <img src="https://img.shields.io/badge/phase-11%20%C2%B7%20vision%20%2B%20hardware-0ea5e9?style=flat-square&labelColor=020a16" alt="Phase 11" />
+  <img src="https://img.shields.io/badge/tests-745%20passed-10b981?style=flat-square&labelColor=020a16" alt="745 tests passing" />
+  <img src="https://img.shields.io/badge/tools-64-10b981?style=flat-square&labelColor=020a16" alt="64 tools" />
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
@@ -63,11 +63,12 @@ cards into their own pages (see [SETUP.md](SETUP.md)):
 
 ## What Luxion does today
 
-Everything below is **shipped and tested** (Phases 0–10):
+Everything below is **shipped and tested** (Phases 0–11a):
 
-- **Chat that acts** — streaming replies driven by a **62-tool agent loop**:
-  files, memory, repository search, browser, desktop, code, web and mail.
-  Every call passes an autonomy matrix with confirmations and an audit log.
+- **Chat that acts** — streaming replies driven by a **64-tool agent loop**:
+  files, memory, repository search, browser, desktop, code, web, mail and
+  vision. Every call passes an autonomy matrix with confirmations and an
+  audit log.
 - **Memory that compounds** — durable facts, preferences and tasks are
   extracted from finished turns, ranked by hybrid vector + keyword recall,
   and injected into every future prompt.
@@ -89,6 +90,10 @@ Everything below is **shipped and tested** (Phases 0–10):
 - **Communication** — send and read **email** over SMTP/IMAP, message
   **WhatsApp** through a persistent WhatsApp Web session (QR login), and raise
   **Windows toast notifications**. No API keys, no business onboarding.
+- **Vision** — Luxion can *look*: `analyze_image` reads a picture file and
+  `analyze_screenshot` captures the screen, both handed to a **vision model**
+  through the same provider you already use (a local `qwen2.5vl:3b` next to a
+  cloud chat model, or the other way round). No new dependency, no new key.
 - **Voice** — wake word, push-to-talk, streaming STT (faster-whisper),
   TTS replies (SAPI5 or the local OmniVoice model), barge-in while speaking.
 - **Your models, your machine** — Ollama by default (fully offline),
@@ -114,6 +119,7 @@ Everything below is **shipped and tested** (Phases 0–10):
 | Voice | faster-whisper STT · pyttsx3 / OmniVoice TTS |
 | Communication | `smtplib` · `imaplib` · WhatsApp Web · WinRT toast |
 | Web data | `httpx` · stdlib `xml.etree` (RSS/Atom) · `zoneinfo` (world clock) |
+| Vision | Pillow (encode/downscale) · vision models over Ollama / OpenAI-compatible |
 
 ## Quick start
 
@@ -174,12 +180,13 @@ Luxion/
 │   │   ├── rag/            # chunking, embeddings, sqlite-vec store
 │   │   ├── repository/     # workspace scan, index, code retrieval
 │   │   ├── security/       # capabilities + consent layer
-│   │   ├── tools/          # tool framework + 62 builtins
+│   │   ├── tools/          # tool framework + 64 builtins
+│   │   ├── vision/         # image pipeline + vision model calls (Phase 11)
 │   │   ├── voice/          # mic, STT, TTS, wake word
 │   │   ├── web/            # search, weather, news, movies, finance… (Phase 9)
 │   │   └── whatsapp/       # WhatsApp Web session + DOM ops (Phase 10)
 │   ├── alembic/            # migrations
-│   └── tests/              # pytest suite (712 tests)
+│   └── tests/              # pytest suite (745 tests)
 ├── frontend/               # React app + Tauri shell
 │   ├── src/                # UI (dashboard, chat, memory, tools, integrations, settings)
 │   └── src-tauri/          # Tauri 2 (crate `luxion`)
@@ -190,7 +197,7 @@ Luxion/
 
 ```powershell
 cd backend
-.\.venv\Scripts\pytest.exe        # 712 tests (1 skipped)
+.\.venv\Scripts\pytest.exe        # 745 tests (1 skipped)
 .\.venv\Scripts\ruff.exe check .  # lint
 .\.venv\Scripts\ruff.exe format --check .
 
@@ -201,17 +208,18 @@ npm run lint                      # oxlint
 
 ## Current status
 
-**Phases 0–10 complete** — architecture; streaming chat + provider adapters
-(Ollama / OpenRouter / OpenAI-compatible, tap-to-switch); context manager;
-tool framework with **62 built-ins**, autonomy matrix, confirmations and audit
-log; capabilities & consent (OS probe, app consents, risk engine); voice
-(STT, TTS, wake word, barge-in); memory store + RAG index + context
-injection; repository indexing + `search_code`; browser agent (Playwright +
-YouTube + Wikipedia); computer automation (Windows control + `input_control`
-capability); coding agent (analyzer, grep, edit, terminal, git/gh);
-web intelligence (seven keyless sources with provenance stamps); and
-communication (email over SMTP/IMAP, WhatsApp Web, Windows toasts). See
-[memory.md](memory.md) for the full phase log and
+**Phases 0–10 complete, Phase 11a done** — architecture; streaming chat +
+provider adapters (Ollama / OpenRouter / OpenAI-compatible, tap-to-switch);
+context manager; tool framework with **64 built-ins**, autonomy matrix,
+confirmations and audit log; capabilities & consent (OS probe, app consents,
+risk engine); voice (STT, TTS, wake word, barge-in); memory store + RAG index +
+context injection; repository indexing + `search_code`; browser agent
+(Playwright + YouTube + Wikipedia); computer automation (Windows control +
+`input_control` capability); coding agent (analyzer, grep, edit, terminal,
+git/gh); web intelligence (seven keyless sources with provenance stamps);
+communication (email over SMTP/IMAP, WhatsApp Web, Windows toasts); and
+**vision** (image + screenshot analysis through a vision model on your existing
+provider). See [memory.md](memory.md) for the full phase log and
 [SETUP.md](SETUP.md) for the user guide.
 
 ## Roadmap
@@ -219,7 +227,7 @@ communication (email over SMTP/IMAP, WhatsApp Web, Windows toasts). See
 | | Phase | Status |
 |--|-------|--------|
 | ✅ | 0–10 | Architecture → communication (see above) |
-| ⬜ | 11 | Vision + Hardware |
+| 🚧 | 11 | Vision + Hardware — **11a done** (vision core); 11b camera + OCR, 11c voice/face auth |
 | ⬜ | 12 | 3D Orb (interaction & behaviour) |
 | ⬜ | 13 | Advanced Agent |
 

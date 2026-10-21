@@ -85,6 +85,9 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         "whatsapp_read",
         "whatsapp_open",
         "notify",
+        # Phase 11 — vision (image analysis + screenshot analysis)
+        "analyze_image",
+        "analyze_screenshot",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"

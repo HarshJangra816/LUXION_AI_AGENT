@@ -9,11 +9,16 @@ from luxion.tools.base import Tool, ToolContext, ToolResult, ToolSpec
 from luxion.tools.builtin.files import resolve_in_workspace
 
 
-def _grab() -> tuple[object, tuple[int, int]]:
+def grab_screen() -> tuple[object, tuple[int, int]]:
+    """Capture every connected display (Pillow). Returns the image + size."""
     from PIL import ImageGrab
 
     image = ImageGrab.grab(all_screens=True)
     return image, image.size
+
+
+def _grab() -> tuple[object, tuple[int, int]]:
+    return grab_screen()
 
 
 class TakeScreenshot(Tool):
