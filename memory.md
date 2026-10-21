@@ -10,13 +10,13 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21) |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`) |
 | **Next phase** | **Phase 11b — camera capture + OCR** (adds `opencv-contrib-python`; optional `rapidocr-onnxruntime`), then **Phase 11c — voice + face authentication** (adds the `biometrics` capability). After that: **Phase 12 — 3D Orb interaction** (core in place), **Phase 13 — Advanced Agent**. Near-term follow-ups: eyeball the new Integrations cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast on this machine |
 | **Last updated** | 2026-10-21 (Phase 11a — vision core: image plumbing in the providers, `luxion/vision/`, `analyze_image` + `analyze_screenshot`, `/api/vision`, Settings → Vision card) |
 | **Backend tests** | **744 passing**, 1 skipped (gh CLI), `ruff check` + `ruff format --check` clean (210 files) — +32 from Phase 11a |
 | **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/vision.ts` + `VisionCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch, **all pushed to `origin/main`** (2026-10-21): Phase 9 as `ca27319`, **UI restructure as `3d8f77b` (own commit)**, SETUP.md as `fad6cb8`, Phase 10 as `87c65b1`, docs refresh as the last commit. Earlier: Phase 7 `e528940`, Phase 8 `70f02ff`. README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch, pushed to `origin/main` through `12aca78` (docs, 2026-10-21). **Phase 11a is `ec89263` — not yet pushed.** Earlier: Phase 9 `ca27319`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 10 `87c65b1`, Phase 7 `e528940`, Phase 8 `70f02ff`. README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
 | **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless) and **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). Keep new phases on this diet. |
@@ -806,7 +806,7 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 
 ## Latest Update
 
-### Phase 11a — Vision core (✅ done 2026-10-21)
+### Phase 11a — Vision core (✅ done 2026-10-21, committed `ec89263`)
 
 User-confirmed choices (asked before building): **vision transport = extend the
 existing providers**, **camera = `opencv-contrib-python`**, **OCR = vision
