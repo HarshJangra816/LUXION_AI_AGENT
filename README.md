@@ -11,8 +11,9 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/phase-11%20%C2%B7%20vision%20%2B%20hardware-0ea5e9?style=flat-square&labelColor=020a16" alt="Phase 11" />
-  <img src="https://img.shields.io/badge/tests-745%20passed-10b981?style=flat-square&labelColor=020a16" alt="745 tests passing" />
+  <img src="https://img.shields.io/badge/tests-744%20passed-10b981?style=flat-square&labelColor=020a16" alt="744 tests passing, 1 skipped" />
   <img src="https://img.shields.io/badge/tools-64-10b981?style=flat-square&labelColor=020a16" alt="64 tools" />
+  <img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square&labelColor=020a16" alt="MIT license" />
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
@@ -26,7 +27,8 @@
   <a href="#what-luxion-does-today">Features</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#roadmap">Roadmap</a> ·
-  <a href="SETUP.md">Setup guide</a>
+  <a href="SETUP.md">Setup guide</a> ·
+  <a href="#contributing">Contributing</a>
 </p>
 
 ---
@@ -63,7 +65,8 @@ cards into their own pages (see [SETUP.md](SETUP.md)):
 
 ## What Luxion does today
 
-Everything below is **shipped and tested** (Phases 0–11a):
+Everything below is **shipped and tested** (Phases 0–11a), except where marked
+*in progress*:
 
 - **Chat that acts** — streaming replies driven by a **64-tool agent loop**:
   files, memory, repository search, browser, desktop, code, web, mail and
@@ -94,6 +97,8 @@ Everything below is **shipped and tested** (Phases 0–11a):
   `analyze_screenshot` captures the screen, both handed to a **vision model**
   through the same provider you already use (a local `qwen2.5vl:3b` next to a
   cloud chat model, or the other way round). No new dependency, no new key.
+  *Phase 11b (in progress)* adds `capture_camera` (webcam frame) and
+  `ocr_image` (text extraction, RapidOCR or the vision model).
 - **Voice** — wake word, push-to-talk, streaming STT (faster-whisper),
   TTS replies (SAPI5 or the local OmniVoice model), barge-in while speaking.
 - **Your models, your machine** — Ollama by default (fully offline),
@@ -119,7 +124,7 @@ Everything below is **shipped and tested** (Phases 0–11a):
 | Voice | faster-whisper STT · pyttsx3 / OmniVoice TTS |
 | Communication | `smtplib` · `imaplib` · WhatsApp Web · WinRT toast |
 | Web data | `httpx` · stdlib `xml.etree` (RSS/Atom) · `zoneinfo` (world clock) |
-| Vision | Pillow (encode/downscale) · vision models over Ollama / OpenAI-compatible |
+| Vision | Pillow (encode/downscale) · vision models over Ollama / OpenAI-compatible · OpenCV (camera, Phase 11b) |
 
 ## Quick start
 
@@ -163,6 +168,7 @@ Luxion/
 ├── prd.md                  # Product requirements (source of truth)
 ├── memory.md               # Project memory — updated after every phase
 ├── SETUP.md                # Setup + user guide (install, pages, permissions)
+├── CONTRIBUTING.md         # Contributor guide (setup, conventions, quality gates)
 ├── docs/assets/            # README screenshots + demo clip
 ├── design-system/luxion/   # Persisted design system (ui-ux-pro-max skill)
 ├── .opencode/skills/       # Agent skills (ui-ux-pro-max, …)
@@ -181,7 +187,7 @@ Luxion/
 │   │   ├── repository/     # workspace scan, index, code retrieval
 │   │   ├── security/       # capabilities + consent layer
 │   │   ├── tools/          # tool framework + 64 builtins
-│   │   ├── vision/         # image pipeline + vision model calls (Phase 11)
+│   │   ├── vision/         # image pipeline, camera, OCR, model calls (Phase 11)
 │   │   ├── voice/          # mic, STT, TTS, wake word
 │   │   ├── web/            # search, weather, news, movies, finance… (Phase 9)
 │   │   └── whatsapp/       # WhatsApp Web session + DOM ops (Phase 10)
@@ -190,7 +196,8 @@ Luxion/
 ├── frontend/               # React app + Tauri shell
 │   ├── src/                # UI (dashboard, chat, memory, tools, integrations, settings)
 │   └── src-tauri/          # Tauri 2 (crate `luxion`)
-└── scripts/dev.ps1         # runs backend + frontend together
+├── scripts/dev.ps1         # runs backend + frontend together
+└── OmniVoice/              # git submodule — upstream TTS model (do not edit here)
 ```
 
 ## Tests & checks
@@ -208,14 +215,14 @@ npm run lint                      # oxlint
 
 ## Current status
 
-**Phases 0–10 complete, Phase 11a done** — architecture; streaming chat +
-provider adapters (Ollama / OpenRouter / OpenAI-compatible, tap-to-switch);
-context manager; tool framework with **64 built-ins**, autonomy matrix,
-confirmations and audit log; capabilities & consent (OS probe, app consents,
-risk engine); voice (STT, TTS, wake word, barge-in); memory store + RAG index +
-context injection; repository indexing + `search_code`; browser agent
-(Playwright + YouTube + Wikipedia); computer automation (Windows control +
-`input_control` capability); coding agent (analyzer, grep, edit, terminal,
+**Phases 0–10 complete, Phase 11a done, Phase 11b in progress** — architecture;
+streaming chat + provider adapters (Ollama / OpenRouter / OpenAI-compatible,
+tap-to-switch); context manager; tool framework with **64 built-ins**, autonomy
+matrix, confirmations and audit log; capabilities & consent (OS probe, app
+consents, risk engine); voice (STT, TTS, wake word, barge-in); memory store +
+RAG index + context injection; repository indexing + `search_code`; browser
+agent (Playwright + YouTube + Wikipedia); computer automation (Windows control
++ `input_control` capability); coding agent (analyzer, grep, edit, terminal,
 git/gh); web intelligence (seven keyless sources with provenance stamps);
 communication (email over SMTP/IMAP, WhatsApp Web, Windows toasts); and
 **vision** (image + screenshot analysis through a vision model on your existing
@@ -227,14 +234,46 @@ provider). See [memory.md](memory.md) for the full phase log and
 | | Phase | Status |
 |--|-------|--------|
 | ✅ | 0–10 | Architecture → communication (see above) |
-| 🚧 | 11 | Vision + Hardware — **11a done** (vision core); 11b camera + OCR, 11c voice/face auth |
+| 🚧 | 11 | Vision + Hardware — **11a done** (vision core); 11b camera + OCR in progress, 11c voice/face auth |
 | ⬜ | 12 | 3D Orb (interaction & behaviour) |
 | ⬜ | 13 | Advanced Agent |
+
+## Contributing
+
+Contributions are welcome — code, tools, web sources, tests, docs and UI work
+all count. Start with **[`CONTRIBUTING.md`](CONTRIBUTING.md)**, which covers:
+
+- **Setup** — prerequisites, backend/frontend/dev-script walkthrough, Playwright
+  and Ollama steps.
+- **Conventions** — Ruff (line length 100), Tailwind v4 tokens in `@theme`, the
+  `.editorconfig` rules, and the one-way import rule between backend packages.
+- **Adding a tool** — the `Tool`/`ToolSpec` contract, risk tiers, capability
+  gating and where to register it.
+- **The permission model** — the four layers, and why a denied capability is a
+  hard block no autonomy level can override.
+- **Quality gates** — the exact commands that must be clean before a push.
+
+Two rules worth calling out up front:
+
+1. **FOSS-first.** Phases 8, 9 and 10 each shipped *zero* new Python
+   dependencies — the standard library and free CLIs are preferred. If a change
+   needs a new package, justify it in the PR.
+2. **`memory.md` is updated in the same PR.** It is the living project log; a
+   behaviour change without a log entry is incomplete.
+
+Good first issues are labelled `good first issue` — scoped so a new contributor
+can finish them in an evening.
 
 ## Docs
 
 - [`SETUP.md`](SETUP.md) — install, run, page-by-page guide, permissions model, troubleshooting
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute: setup, conventions, adding a tool, quality gates
 - [`prd.md`](prd.md) — full requirements (source of truth)
 - [`memory.md`](memory.md) — living status log, phase notes, gotchas
 - [`design-system/luxion/MASTER.md`](design-system/luxion/MASTER.md) — UI design rules
 - http://127.0.0.1:8756/docs — live Swagger/OpenAPI reference while the backend runs
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). Contributions are licensed under the same
+terms; see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution guide.

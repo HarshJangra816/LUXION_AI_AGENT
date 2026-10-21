@@ -54,7 +54,9 @@ Not every contribution needs to be code.
 
 **Before you write code:** open an issue describing the *problem*, not just the
 solution. Several shipped features started as "here is what broke" rather than
-"here is a patch".
+"here is a patch". Use the templates in
+[`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE) — bug report and feature
+request.
 
 ---
 
@@ -456,6 +458,10 @@ Fix web speed test 403 by sending Origin header
 - How did you test it?
 - Any new dependency? (justify it — see [FOSS-first](#python-backend))
 - Screenshots or a short clip for UI changes.
+
+The pull request template at
+[`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) has a
+checklist covering all of this — tick the boxes rather than re-typing them.
 
 **Good first issues** are labelled `good first issue` — they are scoped so a
 new contributor can finish them in an evening. Ask for one if you want a
