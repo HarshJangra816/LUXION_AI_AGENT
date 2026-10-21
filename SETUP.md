@@ -11,9 +11,10 @@ on Windows APIs).
 A **local-first personal AI agent**: a FastAPI backend (Python 3.11+) with a
 React 19 + Vite frontend, packaged as an optional Tauri 2 desktop app. You
 chat with a local or cloud LLM; when a request needs an action, the model calls
-one of **64 tools** on your machine — files, browser, desktop apps, code,
-calendar, live web data, email, WhatsApp, Windows notifications and **image
-analysis**. Every capability has a permission gate you control.
+one of **66 tools** on your machine — files, browser, desktop apps, code,
+calendar, live web data, email, WhatsApp, Windows notifications, **image
+analysis** and **webcam capture + OCR**. Every capability has a permission gate
+you control.
 
 ---
 
@@ -29,9 +30,11 @@ analysis**. Every capability has a permission gate you control.
 | **git** | any | *optional* — coding-agent git/gh tools | git + GitHub CLI (`gh`) are detected and shown in Tools |
 
 Nothing else is required: all Python dependencies (voice, RAG, browser,
-desktop, web, e-mail) install with the backend — there are no API keys for the
-web tools (all seven web sources are keyless), and the communication tools
-(email, WhatsApp, notifications) use **your own accounts**, not a paid API.
+desktop, web, e-mail, **camera + OCR**) install with the backend — there are no
+API keys for the web tools (all seven web sources are keyless), and the
+communication tools (email, WhatsApp, notifications) use **your own accounts**,
+not a paid API. OpenCV and RapidOCR are free/open-source; RapidOCR is optional
+(`ocr_engine=vision` transcribes with your vision model instead).
 
 ---
 
@@ -161,7 +164,9 @@ window that hosts the same UI. For an installer: `npx tauri build`.
    - **Keyboard & mouse control** (`input_control`) gates the raw-injection
      desktop tools (type, click, hotkeys).
    - **Microphone / speaker** — required for voice; **camera / location** are
-     probed read-only from the Windows privacy settings.
+     probed read-only from the Windows privacy settings. The **camera**
+     capability gates `capture_camera` and the Vision card's webcam buttons —
+     Windows must allow Luxion's webcam access.
 5. **Memory → Index files** — point it at a folder (e.g. a notes or project
    directory) so retrieval-augmented answers work. The first index downloads
    the embedding model once (~220 MB, cached).
@@ -219,7 +224,7 @@ What Luxion remembers, and how retrieval works.
 
 Two collapsible cards:
 
-- **Tools** — the full catalog (**64 tools**) grouped by family with risk
+- **Tools** — the full catalog (**66 tools**) grouped by family with risk
   badges (low / medium / high / critical). Per-tool override: **Autonomy
   default / Allow / Ask first / Deny**. "Recent tool activity" is the audit
   log (newest first). Autonomy level and the high-risk guardrail still apply
@@ -273,13 +278,32 @@ and Save:
 - **Vision** — let Luxion *look*. Name a **vision model** (`qwen2.5vl:3b`,
   `llama3.2-vision`, `minicpm-v`, `llava:7b` …) and the `analyze_image` /
   `analyze_screenshot` tools hand pictures to it. The call rides the **same
-  provider you already use**, so there is no new dependency and usually no new
-  API key — a local vision model can sit next to a cloud chat model (fill
-  **Endpoint** to point somewhere else). **Test endpoint** checks the model is
-  there without spending a vision call; **Analyze screen** captures the
-  display and shows the answer (needs the screen-capture consent). Limits:
-  images per request, longest edge, max payload, timeout, plus the **default
-  prompt** used when the model asks nothing specific.
+  provider you already use**, so there is no new key — a local vision model can
+  sit next to a cloud chat model (fill **Endpoint** to point somewhere else).
+  **Test endpoint** checks the model is there without spending a vision call;
+  **Analyze screen** captures the display and shows the answer (needs the
+  screen-capture consent). Limits: images per request, longest edge, max
+  payload, timeout, plus the **default prompt** used when the model asks
+  nothing specific.
+
+  Below that, two more panels:
+
+  - **Webcam capture** — **Test camera** probes indices 0–3 and lists the
+    devices it can open (**indices**), **Capture frame** grabs a frame and
+    shows a live preview plus the saved `data\captures\*.png` path; leave
+    **Question** empty to grab a still without spending a vision call, or
+    type one to have the model describe it. Needs the **camera** capability.
+    **The camera is only opened by these buttons and by `capture_camera` —
+    loading Settings never touches the webcam.** Tune device index, frame
+    size (default 1280×720) and warm-up frames in the **Camera** column;
+    **Save** writes them to `vision.json`.
+  - **Read text (OCR)** — enter an image path, pick an **engine** and press
+    **Read text**. `auto` (default) uses **RapidOCR** when the package is
+    installed — exact, local, free, with per-line boxes — and falls back to
+    your vision model when it is missing *or* finds nothing; `vision`
+    always transcribes through the model. Shows line count, elapsed ms and
+    the transcription. Works with Vision turned off when RapidOCR is present,
+    because neither path costs a model call.
 
 ### Settings
 
@@ -374,6 +398,11 @@ to use):
 - "What's on my screen right now?"
 - "Read the text in this screenshot and list the errors."
 
+**Camera + OCR** (need no vision model when RapidOCR is installed)
+- "Take a photo with my webcam."
+- "What do you see in front of the camera?"
+- "Extract all the text from D:\Documents\receipt.png."
+
 **Voice** — press the mic (or say "Hey Luxion") and speak any of the above.
 
 ---
@@ -406,6 +435,8 @@ read from the project root.
 | Code | `LUXION_CODE__ENABLED/COMMAND_TIMEOUT_S/MAX_OUTPUT_CHARS` | coding agent |
 | Web | `LUXION_WEB__ENABLED/TIMEOUT_S/MAX_RESULTS/NEWS_ITEMS/SEARCH_REGION/TEMPERATURE_UNIT/SPEED_*` | the seven web sources |
 | Vision | `LUXION_VISION__ENABLED/MODEL/PROVIDER/BASE_URL/API_KEY_ENV/PROMPT/MAX_IMAGES/MAX_DIMENSION/MAX_BYTES/TIMEOUT_S` | the vision model + image limits (the model call reuses your chat provider, so no new key is usually needed) |
+| Vision (camera) | `LUXION_VISION__CAMERA_INDEX/CAMERA_WIDTH/CAMERA_HEIGHT/CAMERA_WARMUP_FRAMES` | webcam device and requested frame size (default index 0, 1280×720, 3 warm-up frames) |
+| Vision (OCR) | `LUXION_VISION__OCR_ENGINE/OCR_PROMPT` | `auto` \| `rapidocr` \| `vision` (default `auto`) and the prompt used when the vision model transcribes instead of RapidOCR |
 | Email | `LUXION_EMAIL__ENABLED/SMTP_HOST/SMTP_PORT/SMTP_SECURITY/SMTP_USERNAME/SMTP_PASSWORD/SMTP_PASSWORD_ENV/IMAP_HOST/IMAP_PORT/FROM_NAME/FROM_ADDRESS/SIGNATURE/TIMEOUT_S/READ_LIMIT` | send via SMTP, read via IMAP — the password lives in `.env` only, never in the overlay |
 | WhatsApp | `LUXION_WHATSAPP__ENABLED/HEADLESS/PROFILE_DIR/TIMEOUT_S/LOGIN_TIMEOUT_S` | WhatsApp Web automation (persistent login profile) |
 | Notifications | `LUXION_NOTIFY__ENABLED/APP_NAME/DEFAULT_DURATION_S/SOUND/COOLDOWN_S` | Windows toast notifications |
@@ -435,7 +466,7 @@ read from the project root.
 ## 10. Verify your install (optional)
 
 ```powershell
-# Backend tests + lint  (745 tests, ~40 s)
+# Backend tests + lint  (793 tests, ~56 s)
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m ruff check .
@@ -478,6 +509,10 @@ tool results on cp1252.)
 | Wake word triggers while TTS speaks | Speaker echo — use headphones, or enable barge-in only in quiet rooms (Voice card). |
 | `analyze_image` answers "vision is turned off" | Turn the family on in **Integrations → Vision** (or `LUXION_VISION__ENABLED=true`). |
 | `analyze_image` answers "no model" / gibberish | The chat model can't see. Set **Vision model** to a vision checkpoint (`ollama pull qwen2.5vl:3b`) and press **Test endpoint**. |
+| `capture_camera` / **Test camera** says it could not open | Missing, busy in another app, or blocked — check **Settings → Privacy → Camera** on Windows and that the **camera** capability is allowed. `POST /api/vision/cameras` lists the indices the driver reports. |
+| **Capture frame** saved but the preview looks black | Point it at a lit subject and try again; the driver needs a few frames to settle auto-exposure, which is what **Warm-up frames** skips. Raise it (e.g. 5) if the first frame is still dark. |
+| `ocr_image` answers "no model" / an empty result | Set **OCR engine** to `auto` (RapidOCR, if `rapidocr-onnxruntime` is installed) for exact text, or `vision` and confirm the vision model above is reachable. |
+| `ocr_image` answers "RapidOCR is not installed" | `pip install rapidocr-onnxruntime` in the backend venv, or switch the engine to `vision` — the fallback needs no package. |
 | Weird `�` crashes in PowerShell scripts | Set `$env:PYTHONIOENCODING='utf-8'` before running Python scripts by hand. |
 | Chat answer mentions "thinking" but never answers | A reasoning model with `LUXION_LLM__THINK=true`; set it to `false` (default) until you want raw thinking streams. |
 
@@ -508,7 +543,7 @@ tool results on cp1252.)
 ---
 
 Happy agenting. Phases 0–10 are shipped and tested, and **Phase 11a (the
-vision core)** landed on top of them; **11b (camera + OCR)** and **11c (voice +
-face authentication)** are next, followed by Phase 12 (3D orb behaviour) and
-Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md) and the live
-status in [memory.md](memory.md).
+vision core)** and **Phase 11b (the webcam + OCR)** landed on top of them;
+**11c (voice + face authentication)** is next, followed by Phase 12 (3D orb
+behaviour) and Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md)
+and the live status in [memory.md](memory.md).

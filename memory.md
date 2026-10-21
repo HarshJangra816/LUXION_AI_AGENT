@@ -10,16 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`) |
-| **Next phase** | **Phase 11b — camera capture + OCR** (adds `opencv-contrib-python`; optional `rapidocr-onnxruntime`), then **Phase 11c — voice + face authentication** (adds the `biometrics` capability). After that: **Phase 12 — 3D Orb interaction** (core in place), **Phase 13 — Advanced Agent**. Near-term follow-ups: eyeball the new Integrations cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast on this machine |
-| **Last updated** | 2026-10-21 (Phase 11a — vision core: image plumbing in the providers, `luxion/vision/`, `analyze_image` + `analyze_screenshot`, `/api/vision`, Settings → Vision card) |
-| **Backend tests** | **744 passing**, 1 skipped (gh CLI), `ruff check` + `ruff format --check` clean (210 files) — +32 from Phase 11a |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/vision.ts` + `VisionCard.tsx` added this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`) |
+| **Next phase** | **Phase 11c — voice + face authentication** (adds the `biometrics` capability, 9 → 10; registry 66 → 70; zero extra deps beyond OpenCV). After that: **Phase 12 — 3D Orb interaction** (core in place), **Phase 13 — Advanced Agent**. Near-term follow-ups: eyeball the new Integrations cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast on this machine; **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model) |
+| **Last updated** | 2026-10-21 (Phase 11b — webcam capture + OCR: `luxion/vision/camera.py`, `luxion/vision/ocr.py`, `capture_camera` + `ocr_image`, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard camera/OCR panels) |
+| **Backend tests** | **792 passing**, 1 skipped (793 total), `ruff check` + `ruff format --check` clean (213 files) — +48 from Phase 11b, +32 from 11a |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/vision.ts` + `VisionCard.tsx` extended for camera/OCR this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch, pushed to `origin/main` through `12aca78` (docs, 2026-10-21). **Phase 11a is `ec89263` — not yet pushed.** Earlier: Phase 9 `ca27319`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 10 `87c65b1`, Phase 7 `e528940`, Phase 8 `70f02ff`. README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch, **all pushed to `origin/main`** (2026-10-21): Phase 11b as `05c2075`, contributor docs as `0939221` (README + GitHub templates) and `039b2e1` (CONTRIBUTING.md), Phase 11a as `ec89263` (+ `a4f5c81` memory.md hash record), docs refresh as `12aca78`, Phase 10 as `87c65b1`, **UI restructure as `3d8f77b` (own commit)**, SETUP.md as `fad6cb8`, Phase 9 as `ca27319`. Earlier: Phase 7 `e528940`, Phase 8 `70f02ff`. README refreshed with logo, screenshots (`docs/assets/`), demo video |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
-| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless) and **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). Keep new phases on this diet. |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). Keep new phases on this diet. |
 
 ---
 
@@ -770,7 +770,24 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   renders the QR, "scan qr" chip while polling /status every 3 s, flips to
   "linked" after the phone scan, Close tears down), **Notifications** (Send
   test fires a real toast, capability + platform chips). Card order:
-  Voice · Email · WhatsApp · Notifications · Browser · Desktop · Coding · Web.
+  Voice · Email · WhatsApp · Notifications · Browser · Desktop · Coding · Web · **Vision** (11a).
+- [ ] **Eyeball the Vision card** (Phases 11a + 11b) — run `.\scripts\dev.ps1`,
+  open Integrations → Vision. **11a half**: model/provider/endpoint fields,
+  *Test endpoint* lists models, *Analyze screen* renders an answer (needs the
+  `screen_capture` consent). **11b half**: the **OpenCV / RapidOCR** status row
+  reads `opencv ok · rapidocr ok`; the **Camera** column (index / width /
+  height / warmup) Saves to `vision.json`; *Test camera* probes and prints
+  `indices: 0 · using 0`; *Capture frame* shows a **live 1280×720 preview**;
+  the **OCR** engine select + *Read text* returns line count, elapsed ms and
+  the transcription. Turning Vision off must still let Capture frame and Read
+  text work (only the two *look* tools are gated by that switch).
+- [ ] **Live-verify the vision-model paths (11a + 11b)** — blocked on a model
+  runtime: **Ollama is not installed on this box** (`%LOCALAPPDATA%\Programs\Ollama`
+  is empty and nothing listens on :11434) and the active adapter is `openai`.
+  Install Ollama + `ollama pull qwen2.5vl:3b`, then check *Analyze screen*,
+  `capture_camera` with a question, and `ocr_image` with `engine=vision` /
+  `ocr_engine=vision`. The RapidOCR path is already proven live (3 lines,
+  1837 ms).
 - [ ] **Live-verify Phase 10 transports** — email probe against a real mailbox
   (Gmail needs an app password in `LUXION_EMAIL__SMTP_PASSWORD`), WhatsApp QR
   login once, `email_send` to self. The toast path already fired for real via
@@ -799,12 +816,94 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
 | 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ✅ **done (2026-10-20, committed `87c65b1`)** — `luxion/email/` (smtplib send + imaplib read + MIME + drafts), `luxion/whatsapp/` (persistent Playwright Web session + DOM ops + `whatsapp://` protocol), `luxion/notify/` (PowerShell WinRT toast) + 8 tools (`email_draft`, `email_send`, `email_send_draft`, `email_read`, `whatsapp_send`, `whatsapp_read`, `whatsapp_open`, `notify`) → registry **62**, `EmailConfig`/`WhatsAppConfig`/`NotificationConfig` + `email.json`/`whatsapp.json`/`notify.json` overlays + `/api/email` (+ probe + drafts) + `/api/whatsapp` (+ session/QR/close) + `/api/notify` (+ test toast), Settings → Integrations gains **Email · WhatsApp · Notifications** cards, +91 tests, zero new deps; SMTP password env-only everywhere |
-| 11 | Vision + Hardware | 🚧 **11a done (2026-10-21)** — vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools (`analyze_image`, `analyze_screenshot`) → registry **64**, zero new deps, +32 tests. **11b** = camera + OCR (opencv-contrib-python). **11c** = voice/face auth (`biometrics` capability) |
+| 11 | Vision + Hardware | 🚧 **11a done (2026-10-21, `ec89263`)** — vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools → registry **64**, zero new deps, +32 tests. **11b done (2026-10-21, `05c2075`)** — `camera.py` (OpenCV webcam) + `ocr.py` (RapidOCR / vision), `capture_camera` + `ocr_image` → registry **66**, `VisionConfig` camera + OCR knobs, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard panels, 2 new FOSS deps, +48 tests (793 total), **live-verified on the HP True Vision webcam**. **11c** = voice/face auth (`biometrics` capability) → registry 70 |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
 | 13 | Advanced Agent | ⬜ |
 
 
 ## Latest Update
+
+### Phase 11b — Camera + OCR (✅ done 2026-10-21, committed `05c2075`)
+
+**11b (this session) — the webcam and text extraction. Two new FOSS deps,
+both pre-approved by the user.**
+
+- **`backend/luxion/vision/camera.py`** — OpenCV `VideoCapture` wrapper.
+  `capture_frame(index, width, height, warmup_frames)` discards warm-up frames
+  so auto-exposure settles, retries up to three reads (a dropped frame must not
+  fail the capture) and **releases the handle on every path — including a
+  failed open**, where the handle still counts against the driver (a leak keeps
+  the Windows "camera on" light lit). Distinct `VisionError` codes per failure
+  mode: `camera_dependency_missing`, `camera_open_failed`, `camera_no_frame`,
+  `camera_write_failed`. Also `list_cameras()` (probes indices 0-3),
+  `opencv_available()` (**import check only — never opens a device**, so
+  Settings can report OpenCV without lighting the indicator), `camera_available()`,
+  `frame_to_image()` (BGR → RGB), `save_frame()`, and the async `capture_image()`
+  convenience that captures, prepares and optionally saves.
+- **`backend/luxion/vision/ocr.py`** — one contract, two engines behind
+  `vision.ocr_engine`: `rapidocr` (exact, local, free), `vision` (the model
+  transcribes — works without the package), `auto` (try RapidOCR, fall back
+  when it is missing *or* finds nothing). `rapidocr_available()` is an import
+  check; `_engine()` builds one cached ONNX session under a lock (~1 s).
+  `OcrItem`/`OcrResult` carry text, per-line boxes + confidence, line count and
+  elapsed ms; detection output is **sorted top-to-bottom, then left-to-right**
+  so the joined text reads in the order a person would. The vision fallback
+  uses a dedicated `ocr_prompt`, not the image-*description* prompt — describing
+  and transcribing are opposite instructions.
+- **`imaging.py` refactor** — the source-decoding half of `prepare_image()` is
+  now `decode_image(source, *, label)`, shared by the model path, the OCR path
+  and (in 11c) face detection. `decode_image` runs in `asyncio.to_thread`.
+- **`VisionConfig`** — six new knobs: `camera_index` (0-9), `camera_width`
+  (1280), `camera_height` (720), `camera_warmup_frames` (3), `ocr_engine`
+  (`auto|rapidocr|vision`), `ocr_prompt`. All six mirrored in
+  `VisionConfigPatch` (`extra="forbid"`), so an unknown key is 422 and an
+  out-of-range value is silently dropped.
+- **Tools** — `capture_camera` (low, read-only, **`requires="camera"`**) and
+  `ocr_image` (low, read-only, **no capability** — reading a file's text is
+  neither hardware access nor a mutation). Registry **64 → 66**; capability
+  registry unchanged at **9**. Both keep working with `vision.enabled` off:
+  capturing a frame and reading text are OpenCV operations that cost no model
+  call — only `analyze_image` / `analyze_screenshot` are gated by that switch.
+- **`/api/vision`** — `POST /cameras` (probes devices; **a POST so it can
+  never run as a side effect of loading Settings**), `POST /camera`
+  (capability-gated, returns a `data:` URL + dimensions + optional model
+  answer), `POST /ocr` (path + optional engine → text/boxes/line count).
+  `_status()` gained `opencv_available` + `ocr_available` (both import-only);
+  `_catalog()` gained `ocr_engines` + `camera_max_index`.
+- **Frontend** — `lib/vision.ts` (`listCameras`, `captureCamera`, `ocrImage`,
+  new config/status/catalog fields) and `VisionCard.tsx` gained a **Camera**
+  column (index / resolution / height / warmup), an **OCR** engine select, and
+  two "Try it" panels: **Webcam capture** (Test camera → index list, Capture
+  frame → preview + optional answer) and **Read text (OCR)** (path → engine,
+  line count, elapsed ms, monospace result).
+- **Deps** — `opencv-contrib-python>=4.10` + `rapidocr-onnxruntime>=1.2.3`
+  declared in `pyproject.toml` (also pulls `opencv-python`, `Shapely`,
+  `pyclipper`). Both FOSS; RapidOCR is genuinely optional because the vision
+  fallback exists.
+- **Env** — `LUXION_VISION__CAMERA_*` (index/width/height/warmup) and
+  `LUXION_VISION__OCR_*` (engine/prompt) documented in `.env.example`.
+- **Tests** — `tests/test_vision_camera.py` (38) + 10 new cases in
+  `test_vision_api.py`. Suite **745 → 793** (792 passing, 1 skipped).
+  Hermetic: a fake `cv2` (declared devices, recorded opens, released handles)
+  and a fake OCR engine; **nothing opens the real webcam in CI and the host's
+  Windows camera-privacy state is stubbed**, so results do not vary by machine.
+
+**Live verification on this machine (2026-10-21)**
+
+- `POST /vision/cameras` → `{'indices': [0], 'camera_index': 0}` (the
+  **HP True Vision FHD Camera**).
+- `POST /vision/camera` → **200, 1280×720**, real PNG data URL, saved to
+  `<data_dir>/captures/`.
+- `POST /vision/ocr` → **200 via `engine: rapidocr`**, 3 lines in 1837 ms with
+  per-line boxes and confidences.
+- Capability gate → `state='granted' allowed=True reason='Windows allows Luxion
+  to use the camera'`; unknown keys on both endpoints → **422**.
+- **Not yet live-verified:** the vision-model paths (`capture_camera` with a
+  `question`, `ocr_engine=vision`) — **Ollama is not installed on this box**
+  (the `Programs\Ollama` folder is empty and nothing listens on :11434), and
+  the active adapter is `openai`. Those paths are covered by hermetic tests.
+
+**Still to come in Phase 11** — **11c only** (see below).
 
 ### Phase 11a — Vision core (✅ done 2026-10-21, committed `ec89263`)
 
@@ -852,14 +951,10 @@ beyond OpenCV**. Phase 11 ships as **11a → 11b → 11c**.
   Suite **713 → 745** (744 passing, 1 skipped).
 - **Env** — `LUXION_VISION__*` documented in `.env.example`.
 
-**Still to come in Phase 11**
+**Still to come in Phase 11** (as planned when 11a shipped)
 
-- **11b — camera + OCR.** `luxion/vision/camera.py` (OpenCV webcam capture;
-  the machine has an **HP True Vision FHD Camera**, so this is live-verifiable),
-  `luxion/vision/ocr.py` (RapidOCR when installed, else the vision model
-  transcribes), tools `capture_camera` + `ocr_image`, `camera` capability
-  wiring. **Adds `opencv-contrib-python`** (one dep: camera + Haar + SFace)
-  and optionally `rapidocr-onnxruntime`.
+- ~~**11b — camera + OCR**~~ — **shipped as `05c2075`**; see the 11b section
+  above.
 - **11c — authentication.** `luxion/vision/auth.py`: voiceprint = MFCC + DTW
   over **scipy** (already installed) and face = OpenCV **SFace** embeddings,
   both behind a new **`biometrics`** capability (default OFF). Tools
@@ -867,9 +962,15 @@ beyond OpenCV**. Phase 11 ships as **11a → 11b → 11c**.
   `/api/auth` routes, `AuthCard`. **Zero extra deps beyond OpenCV.**
   `resemblyzer` was rejected — it pins `librosa<0.11` and would downgrade the
   librosa 1.0.0 that OmniVoice needs.
+  **⚠ Learned in 11b:** OpenCV 5.0 ships **no Haar cascade XMLs and no bundled
+  face `.onnx` models** — `cv2/data/` contains only `__init__.py`. So 11c must
+  download YuNet (`face_detection_yunet_*.onnx`) + SFace
+  (`face_recognition_sface_*.onnx`) at first use and cache them under
+  `<data_dir>/vision_models/`, the same pattern as the whisper/embedding models.
 
-**Capability count stays 9 in 11a** (`analyze_screenshot` reuses the existing
-`screen_capture`); 11c adds `biometrics` → 10.
+**Capability count stays 9 through 11b** (`capture_camera` reuses the existing
+`camera` capability, `analyze_screenshot` the existing `screen_capture`);
+11c adds `biometrics` → 10.
 
 ### Phase 10 — Communication (✅ done 2026-10-20, committed `87c65b1`)
 
