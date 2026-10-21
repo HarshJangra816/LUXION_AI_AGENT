@@ -12,6 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/phase-11%20%C2%B7%20vision%20%2B%20hardware-0ea5e9?style=flat-square&labelColor=020a16" alt="Phase 11" />
   <img src="https://img.shields.io/badge/tests-792%20passed-10b981?style=flat-square&labelColor=020a16" alt="792 tests passing, 1 skipped" />
+  <img src="https://img.shields.io/github/actions/workflow/status/HarshJangra816/LUXION_AI_AGENT/ci.yml?style=flat-square&labelColor=020a16&label=CI" alt="CI" />
   <img src="https://img.shields.io/badge/tools-66-10b981?style=flat-square&labelColor=020a16" alt="66 tools" />
   <img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square&labelColor=020a16" alt="MIT license" />
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2" />

@@ -931,6 +931,29 @@ difference 1 LSB of int16). `pytest` **792 passed, 1 skipped** with
 `soundfile` uninstalled, `ruff check` + `ruff format --check` clean (213
 files).
 
+### Maintenance — GitHub Actions CI (2026-10-21)
+
+**Gap:** the repository had 793 backend tests and a `CONTRIBUTING.md` that
+spells out the quality gates, but nothing enforced them — every change had to
+be verified by hand, on one machine.
+
+**Fix:** `.github/workflows/ci.yml` runs those gates on every push and pull
+request:
+
+- **backend** (`windows-latest`, Python 3.11 + 3.12) — `pip install -e ".[dev]"`,
+  `ruff check .`, `ruff format --check .`, `pytest`. Windows on purpose:
+  `pywinauto`, `pycaw`/`comtypes`, `sounddevice` and `pyttsx3` are
+  Windows-only, so the backend cannot even be *installed* on `ubuntu-latest`.
+- **frontend** (`ubuntu-latest`, Node 22) — `npm ci`, `npm run lint` (oxlint),
+  `npm run build` (`tsc -b && vite build`). The frontend is
+  platform-agnostic, so it builds on the cheaper Linux runner.
+
+Both jobs use the pip/npm caches, and a newer push to the same branch cancels
+the in-flight run. The `OmniVoice` submodule is not needed — the `omnivoice`
+import is lazy and the tests stub it through `sys.modules`.
+
+README gains a CI badge.
+
 ### Phase 11a — Vision core (✅ done 2026-10-21, committed `ec89263`)
 
 User-confirmed choices (asked before building): **vision transport = extend the
