@@ -171,6 +171,31 @@ def prepare_image(
     edge and base64-encoded, ready for :class:`ImagePayload`.
     """
     pil = _pil()
+    image, name = decode_image(source, label=label)
+    image = _normalise(image)
+    image.thumbnail((max_dimension, max_dimension), pil.LANCZOS)
+    payload, mime = encode_image(image, max_bytes=max_bytes)
+    return PreparedImage(
+        data=base64.b64encode(payload).decode("ascii"),
+        mime=mime,
+        width=image.width,
+        height=image.height,
+        source=name,
+        size_bytes=len(payload),
+    )
+
+
+def decode_image(source: str | Path | bytes | Any, *, label: str | None = None) -> tuple[Any, str]:
+    """Turn any supported source into a PIL image plus a human label.
+
+    Shared by every consumer that wants the raw pixels rather than an encoded
+    payload — :func:`prepare_image` for the vision model, the OCR engine for
+    text extraction and the face detector in Phase 11c. The EXIF rotation and
+    colour-mode fix are deliberately **not** applied here: OCR and face
+    detection want the pixels as stored, and :func:`prepare_image` runs them
+    for the model path.
+    """
+    pil = _pil()
     name = label
     if isinstance(source, (str, Path)):
         image = load_image(source)
@@ -193,18 +218,7 @@ def prepare_image(
             "Unsupported image source — pass a file path, image bytes or a PIL image.",
             code="vision_unsupported_source",
         )
-
-    image = _normalise(image)
-    image.thumbnail((max_dimension, max_dimension), pil.LANCZOS)
-    payload, mime = encode_image(image, max_bytes=max_bytes)
-    return PreparedImage(
-        data=base64.b64encode(payload).decode("ascii"),
-        mime=mime,
-        width=image.width,
-        height=image.height,
-        source=name,
-        size_bytes=len(payload),
-    )
+    return image, name
 
 
 def guess_mime(path: str | Path) -> str:

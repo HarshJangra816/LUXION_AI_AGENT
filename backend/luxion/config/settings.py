@@ -674,6 +674,28 @@ class VisionConfig(BaseModel):
     max_bytes: int = Field(default=8_000_000, ge=100_000, le=50_000_000)
     #: Per-request budget for the vision model (seconds).
     timeout_s: float = Field(default=120.0, gt=0, le=600)
+    #: Which webcam ``capture_camera`` opens (0 = the first device).
+    camera_index: int = Field(default=0, ge=0, le=9)
+    #: Requested capture width (the driver may negotiate something else).
+    camera_width: int = Field(default=1280, ge=160, le=3840)
+    #: Requested capture height.
+    camera_height: int = Field(default=720, ge=120, le=2160)
+    #: Frames discarded before the real read — the sensor needs a few to
+    #: settle its exposure and white balance.
+    camera_warmup_frames: int = Field(default=3, ge=0, le=15)
+    #: How ``ocr_image`` extracts text: ``rapidocr`` (exact, offline, needs
+    #: ``rapidocr-onnxruntime`` installed), ``vision`` (the vision model
+    #: transcribes — works everywhere, but approximate), ``auto`` = try
+    #: RapidOCR first and fall back to the model.
+    ocr_engine: Literal["auto", "rapidocr", "vision"] = "auto"
+    #: Instruction used when the vision model is the OCR engine. Kept separate
+    #: from ``prompt`` because describing an image and *transcribing* one are
+    #: opposite instructions.
+    ocr_prompt: str = (
+        "Transcribe every piece of text visible in this image, keeping the "
+        "line and column order. Output only the text you can read — no "
+        "commentary, no labels, no markdown."
+    )
 
 
 def _valid_vision_values(values: dict[str, object]) -> dict[str, object]:

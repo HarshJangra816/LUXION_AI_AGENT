@@ -21,6 +21,12 @@ export interface VisionConfig {
   max_dimension: number
   max_bytes: number
   timeout_s: number
+  camera_index: number
+  camera_width: number
+  camera_height: number
+  camera_warmup_frames: number
+  ocr_engine: 'auto' | 'rapidocr' | 'vision'
+  ocr_prompt: string
 }
 
 /** Static facts about the vision family (backend routes/vision._status). */
@@ -32,6 +38,10 @@ export interface VisionStatus {
   browser_independent: boolean
   /** True — the vision model runs on the chat adapter's endpoint. */
   uses_chat_provider: boolean
+  /** OpenCV importable (import check only — never opens the camera). */
+  opencv_available: boolean
+  /** RapidOCR importable. */
+  ocr_available: boolean
 }
 
 /** Enumerations the card offers as hints (backend routes/vision._catalog). */
@@ -39,6 +49,8 @@ export interface VisionCatalog {
   suggested_models: string[]
   supported_types: string[]
   max_images: number
+  ocr_engines: Array<'auto' | 'rapidocr' | 'vision'>
+  camera_max_index: number
 }
 
 /** What Settings → Vision edits (effective + defaults + status + catalog). */
@@ -72,6 +84,40 @@ export interface VisionAnalysis {
   }
 }
 
+/** Which webcam indices opened a device (`POST /vision/cameras`). */
+export interface CameraList {
+  indices: number[]
+  camera_index: number
+}
+
+/** A captured frame (`POST /vision/camera`). */
+export interface CameraCapture {
+  image: string
+  mime: string
+  width: number
+  height: number
+  path: string | null
+  answer: string | null
+}
+
+/** One OCR item with a bounding box and confidence (`POST /vision/ocr`). */
+export interface OcrItem {
+  text: string
+  score: number
+  box: number[][]
+}
+
+/** Extracted text (`POST /vision/ocr`). */
+export interface OcrResult {
+  text: string
+  engine: string
+  source: string
+  line_count: number
+  elapsed_ms: number
+  items: OcrItem[]
+  path?: string
+}
+
 /** Effective vision settings + endpoint status (defaults → `.env` → vision.json). */
 export function getVisionConfig(signal?: AbortSignal): Promise<VisionConfigBundle> {
   return request<VisionConfigBundle>('/vision', { signal })
@@ -103,6 +149,35 @@ export function analyzeImage(payload: {
   question?: string
 }): Promise<VisionAnalysis> {
   return request<VisionAnalysis>('/vision/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+/** Probe which webcams open (opt-in — never on page load). */
+export function listCameras(): Promise<CameraList> {
+  return request<CameraList>('/vision/cameras', { method: 'POST' })
+}
+
+/** Capture one frame from the webcam. */
+export function captureCamera(payload: {
+  question?: string
+  path?: string
+} = {}): Promise<CameraCapture> {
+  return request<CameraCapture>('/vision/camera', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+/** Read the text out of an image file. */
+export function ocrImage(payload: {
+  path: string
+  engine?: 'auto' | 'rapidocr' | 'vision'
+}): Promise<OcrResult> {
+  return request<OcrResult>('/vision/ocr', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

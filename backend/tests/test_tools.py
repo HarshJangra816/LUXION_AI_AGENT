@@ -96,6 +96,9 @@ EXPECTED_BUILTIN_TOOLS = {
     # Phase 11 — PRD §5.9/§33.15 vision (screenshot analysis + image reading)
     "analyze_image",
     "analyze_screenshot",
+    # Phase 11b — PRD §11 camera + OCR
+    "capture_camera",
+    "ocr_image",
 }
 
 

@@ -55,14 +55,27 @@ def test_config_read_reports_defaults_status_and_catalog(clean_vision: TestClien
     assert set(bundle["config"]) == set(VisionConfig.model_fields)
 
     status = bundle["status"]
-    assert set(status) == {"enabled", "keyless", "browser_independent", "uses_chat_provider"}
+    assert set(status) == {
+        "enabled",
+        "keyless",
+        "browser_independent",
+        "uses_chat_provider",
+        "opencv_available",
+        "ocr_available",
+    }
     assert status["enabled"] is True
     assert status["browser_independent"] is True
     assert status["uses_chat_provider"] is True
+    # Import checks only — loading Settings must never open the webcam,
+    # or the camera indicator would light every time the card renders.
+    assert isinstance(status["opencv_available"], bool)
+    assert isinstance(status["ocr_available"], bool)
 
     catalog = bundle["catalog"]
     assert "qwen2.5vl:3b" in catalog["suggested_models"]
     assert ".png" in catalog["supported_types"]
+    assert catalog["ocr_engines"] == ["auto", "rapidocr", "vision"]
+    assert catalog["camera_max_index"] == 9
 
 
 def test_config_patch_covers_every_vision_knob() -> None:
@@ -166,5 +179,166 @@ def test_analyze_refuses_a_file_outside_the_workspace(
     target.write_bytes(_png())
 
     response = clean_vision.post("/api/vision/analyze", json={"path": str(target)})
+    assert response.status_code == 400
+    assert "workspace" in response.json()["detail"].lower()
+
+
+# ------------------------------------------------- camera (Phase 11b)
+def _bgr_frame(height: int = 240, width: int = 320):
+    import numpy as np
+
+    return np.zeros((height, width, 3), dtype=np.uint8)
+
+
+def test_cameras_probe_is_opt_in_and_reports_indices(
+    clean_vision: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Loading Settings must never open the webcam — only the POST does."""
+    import luxion.api.routes.vision as vision_routes
+
+    opened: list[str] = []
+
+    def _list() -> list[int]:
+        opened.append("probe")
+        return [0, 2]
+
+    monkeypatch.setattr(vision_routes, "list_cameras", _list)
+
+    bundle = clean_vision.get("/api/vision").json()
+    assert isinstance(bundle["status"]["opencv_available"], bool)
+    assert opened == [], "GET /vision opened a device"
+
+    payload = clean_vision.post("/api/vision/cameras").json()
+    assert payload == {"indices": [0, 2], "camera_index": 0}
+    assert opened == ["probe"]
+
+
+def test_camera_capture_denied_when_windows_blocks_the_webcam(
+    clean_vision: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A capability denial is a hard block no autonomy level can override."""
+    import luxion.api.routes.vision as vision_routes
+
+    monkeypatch.setattr("luxion.security.capabilities.probe_os_consent", lambda key: "deny")
+    monkeypatch.setattr(
+        vision_routes,
+        "capture_frame",
+        lambda **_kw: pytest.fail("the camera was opened despite the denial"),
+    )
+
+    response = clean_vision.post("/api/vision/camera", json={})
+    assert response.status_code == 403
+    assert "windows" in response.json()["detail"].lower()
+
+
+def test_camera_capture_returns_a_data_url(
+    clean_vision: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import luxion.api.routes.vision as vision_routes
+
+    monkeypatch.setattr("luxion.security.capabilities.probe_os_consent", lambda key: "allow")
+    monkeypatch.setattr(vision_routes, "capture_frame", lambda **_kw: _bgr_frame(240, 320))
+
+    payload = clean_vision.post("/api/vision/camera", json={}).json()
+
+    assert payload["width"] == 320 and payload["height"] == 240
+    assert payload["image"].startswith("data:image/png;base64,")
+    assert payload["answer"] is None
+    assert payload["path"] and payload["path"].endswith(".png")
+    assert Path(payload["path"]).exists()
+
+
+def test_camera_capture_rejects_unknown_keys(clean_vision: TestClient) -> None:
+    assert clean_vision.post("/api/vision/camera", json={"nope": 1}).status_code == 422
+
+
+def test_camera_capture_surfaces_a_missing_webcam(
+    clean_vision: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import luxion.api.routes.vision as vision_routes
+    from luxion.vision.imaging import VisionError
+
+    monkeypatch.setattr("luxion.security.capabilities.probe_os_consent", lambda key: "allow")
+
+    def _boom(**_kw):
+        raise VisionError("Camera 0 could not be opened.", code="camera_open_failed")
+
+    monkeypatch.setattr(vision_routes, "capture_frame", _boom)
+
+    response = clean_vision.post("/api/vision/camera", json={})
+    assert response.status_code == 400
+    assert "Camera 0" in response.json()["detail"]
+
+
+# ------------------------------------------------------- OCR (Phase 11b)
+def test_ocr_reads_a_file(
+    clean_vision: TestClient, workspace: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import luxion.api.routes.vision as vision_routes
+    from luxion.vision.ocr import OcrResult
+
+    target = workspace / "doc.png"
+    target.write_bytes(_png())
+    seen: dict[str, object] = {}
+
+    async def _extract(settings, source, *, engine=None, label=None):  # noqa: ANN001, ANN001, ANN001, ANN201
+        seen["engine"] = engine
+        return OcrResult(text="hello world", engine="rapidocr", source=Path(source).name)
+
+    monkeypatch.setattr(vision_routes, "extract_text", _extract)
+
+    payload = clean_vision.post("/api/vision/ocr", json={"path": str(target)}).json()
+
+    assert payload["text"] == "hello world"
+    assert payload["engine"] == "rapidocr"
+    assert payload["line_count"] == 1
+    assert payload["path"] == str(target)
+    assert seen["engine"] is None  # no override → the configured engine
+
+
+def test_ocr_forwards_the_requested_engine(
+    clean_vision: TestClient, workspace: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import luxion.api.routes.vision as vision_routes
+    from luxion.vision.ocr import OcrResult
+
+    target = workspace / "doc.png"
+    target.write_bytes(_png())
+    seen: dict[str, object] = {}
+
+    async def _extract(settings, source, *, engine=None, label=None):  # noqa: ANN001, ANN001, ANN001, ANN201
+        seen["engine"] = engine
+        return OcrResult(text="t", engine=engine or "auto", source=Path(source).name)
+
+    monkeypatch.setattr(vision_routes, "extract_text", _extract)
+
+    clean_vision.post("/api/vision/ocr", json={"path": str(target), "engine": "vision"})
+    assert seen["engine"] == "vision"
+
+
+def test_ocr_rejects_unknown_keys(clean_vision: TestClient) -> None:
+    assert (
+        clean_vision.post("/api/vision/ocr", json={"path": "x.png", "nope": 1}).status_code == 422
+    )
+
+
+def test_ocr_reports_an_unknown_engine(clean_vision: TestClient, workspace: Path) -> None:
+    target = workspace / "doc.png"
+    target.write_bytes(_png())
+
+    response = clean_vision.post(
+        "/api/vision/ocr", json={"path": str(target), "engine": "tesseract"}
+    )
+    assert response.status_code == 400
+    assert "engine" in response.json()["detail"].lower()
+
+
+def test_ocr_refuses_a_file_outside_the_workspace(clean_vision: TestClient, tmp_path: Path) -> None:
+    outside = tmp_path.parent / "outside-ocr"
+    outside.mkdir(exist_ok=True)
+    target = outside / "doc.png"
+    target.write_bytes(_png())
+
+    response = clean_vision.post("/api/vision/ocr", json={"path": str(target)})
     assert response.status_code == 400
     assert "workspace" in response.json()["detail"].lower()

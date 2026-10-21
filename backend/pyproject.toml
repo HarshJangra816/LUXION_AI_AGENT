@@ -33,6 +33,10 @@ dependencies = [
     # comtypes/pywin32 which pywinauto already pulls in).
     "pywinauto>=0.6.8",
     "pycaw>=20260927",
+    # Vision + hardware (Phase 11b): webcam capture and face/SFace foundations
+    # (opencv-contrib), exact-text OCR via ONNX Runtime (rapidocr).
+    "opencv-contrib-python>=4.10",
+    "rapidocr-onnxruntime>=1.2.3",
 ]
 
 [project.optional-dependencies]

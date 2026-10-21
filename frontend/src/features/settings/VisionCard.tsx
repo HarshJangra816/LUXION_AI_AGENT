@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
-import { AlertIcon, EyeIcon, RefreshIcon } from '../../components/icons'
+import { AlertIcon, CameraIcon, EyeIcon, FingerprintIcon, RefreshIcon } from '../../components/icons'
 import { SettingsCard } from '../../components/SettingsCard'
 import { ApiError } from '../../lib/api'
 import {
   analyzeImage,
+  captureCamera,
   getVisionConfig,
+  listCameras,
+  ocrImage,
   probeVision,
   resetVisionConfig,
   setVisionConfig,
+  type CameraCapture,
+  type CameraList,
+  type OcrResult,
   type VisionConfig,
   type VisionConfigBundle,
   type VisionProbe,
@@ -91,6 +97,14 @@ export function VisionCard() {
   const [probing, setProbing] = useState(false)
   const [answer, setAnswer] = useState<string | null>(null)
   const [question, setQuestion] = useState('What is on this screen?')
+  const [cameras, setCameras] = useState<CameraList | null>(null)
+  const [probingCams, setProbingCams] = useState(false)
+  const [capture, setCapture] = useState<CameraCapture | null>(null)
+  const [capturing, setCapturing] = useState(false)
+  const [ocrPath, setOcrPath] = useState('')
+  const [ocrResult, setOcrResult] = useState<OcrResult | null>(null)
+  const [ocrRunning, setOcrRunning] = useState(false)
+  const [cameraQuestion, setCameraQuestion] = useState('')
 
   const apply = (data: VisionConfigBundle) => {
     setBundle(data)
@@ -148,7 +162,7 @@ export function VisionCard() {
   )
 
   const text = (
-    key: 'model' | 'provider' | 'base_url' | 'api_key_env' | 'prompt',
+    key: 'model' | 'provider' | 'base_url' | 'api_key_env' | 'prompt' | 'ocr_prompt',
     placeholder: string,
   ) => (
     <input
@@ -158,6 +172,24 @@ export function VisionCard() {
       onChange={(event) => setField(key, event.target.value as never)}
       className={TEXT_CLASS}
     />
+  )
+
+  const select = <K extends keyof VisionConfig>(
+    key: K,
+    options: Array<{ value: VisionConfig[K]; label: string }>,
+  ) => (
+    <select
+      value={String(config[key])}
+      disabled={busy !== null}
+      onChange={(event) => setField(key, event.target.value as never)}
+      className="h-8 rounded-lg border border-white/15 bg-surface/70 px-2 font-mono text-[11px] text-ink transition duration-200 hover:border-white/30 focus:border-tint/60 focus:outline-none disabled:cursor-wait disabled:opacity-60"
+    >
+      {options.map((option) => (
+        <option key={String(option.value)} value={String(option.value)}>
+          {option.label}
+        </option>
+      ))}
+    </select>
   )
 
   const save = async () => {
@@ -218,6 +250,50 @@ export function VisionCard() {
     }
   }
 
+  const runProbeCameras = async () => {
+    setProbingCams(true)
+    setError(null)
+    try {
+      setCameras(await listCameras())
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setProbingCams(false)
+    }
+  }
+
+  const runCapture = async () => {
+    setCapturing(true)
+    setError(null)
+    setCapture(null)
+    try {
+      setCapture(
+        await captureCamera({ question: cameraQuestion.trim() || undefined }),
+      )
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setCapturing(false)
+    }
+  }
+
+  const runOcr = async () => {
+    if (!ocrPath.trim()) {
+      setError('OCR needs a file path (inside an approved workspace).')
+      return
+    }
+    setOcrRunning(true)
+    setError(null)
+    setOcrResult(null)
+    try {
+      setOcrResult(await ocrImage({ path: ocrPath.trim(), engine: config.ocr_engine }))
+    } catch (err) {
+      setError(messageOf(err))
+    } finally {
+      setOcrRunning(false)
+    }
+  }
+
   return (
     <SettingsCard
       id="vision"
@@ -238,9 +314,13 @@ export function VisionCard() {
         <>
           Lets Luxion look at pictures: the <span className="text-ink">analyze_image</span> and{' '}
           <span className="text-ink">analyze_screenshot</span> tools hand a picture to a vision
-          model (PRD §5.9, §33.15). The model call reuses your existing chat provider, so no new
-          API key and no new dependency. Turning this off makes both tools answer{' '}
-          <span className="text-ink">disabled</span>.
+          model (PRD §5.9, §33.15). <span className="text-ink">capture_camera</span> grabs the
+          webcam (needs the <span className="text-ink">camera</span> capability), and{' '}
+          <span className="text-ink">ocr_image</span> reads text out of a file (RapidOCR when
+          installed, else the vision model). The model call reuses your existing chat provider,
+          so no new API key and no new dependency for the vision path. Turning this off makes
+          the two <span className="text-ink">look</span> tools answer{' '}
+          <span className="text-ink">disabled</span> but does not block capture or OCR.
         </>
       }
       actions={
@@ -280,7 +360,7 @@ export function VisionCard() {
         <div>
           <h4 className="font-mono text-[10px] tracking-[0.18em] text-tint uppercase">Access</h4>
           <div className="mt-1 rounded-xl border border-white/10 bg-surface/60 px-4 py-1">
-            <Row label="Enable vision tools" hint="off = both tools answer 'disabled'">
+            <Row label="Enable vision tools" hint="off = look tools answer 'disabled'">
               <Toggle
                 checked={config.enabled}
                 disabled={busy !== null}
@@ -293,6 +373,17 @@ export function VisionCard() {
             </Row>
             <Row label="Provider" hint="empty = the chat adapter">
               {text('provider', 'ollama')}
+            </Row>
+            <Row label="OpenCV / RapidOCR" hint="imports only — never opens the camera here">
+              <span className="flex items-center gap-2 font-mono text-[10px] text-muted">
+                <span className={status.opencv_available ? 'text-status-ok' : 'text-muted/70'}>
+                  {status.opencv_available ? 'opencv ok' : 'opencv missing'}
+                </span>
+                <span className="text-white/20">·</span>
+                <span className={status.ocr_available ? 'text-status-ok' : 'text-muted/70'}>
+                  {status.ocr_available ? 'rapidocr ok' : 'rapidocr missing'}
+                </span>
+              </span>
             </Row>
           </div>
 
@@ -360,6 +451,33 @@ export function VisionCard() {
             </Row>
           </div>
 
+          <h4 className="mt-4 font-mono text-[10px] tracking-[0.18em] text-tint uppercase">
+            Camera
+          </h4>
+          <div className="mt-1 rounded-xl border border-white/10 bg-surface/60 px-4 py-1">
+            <Row label="Camera index" hint="0 = first webcam">
+              {num('camera_index', 0, 9, 1)}
+            </Row>
+            <Row label="Resolution">{num('camera_width', 160, 3840, 16)}</Row>
+            <Row label="Height">{num('camera_height', 120, 2160, 16)}</Row>
+            <Row label="Warmup frames" hint="let exposure settle">
+              {num('camera_warmup_frames', 0, 15, 1)}
+            </Row>
+          </div>
+
+          <h4 className="mt-4 font-mono text-[10px] tracking-[0.18em] text-tint uppercase">
+            OCR
+          </h4>
+          <div className="mt-1 rounded-xl border border-white/10 bg-surface/60 px-4 py-1">
+            <Row label="Engine" hint="auto = RapidOCR, else vision">
+              {select('ocr_engine', [
+                { value: 'auto', label: 'auto' },
+                { value: 'rapidocr', label: 'rapidocr' },
+                { value: 'vision', label: 'vision' },
+              ])}
+            </Row>
+          </div>
+
           <div className="mt-3 rounded-xl border border-white/10 bg-surface/60 px-4 py-2.5">
             <p className="text-xs text-ink">Default prompt</p>
             <p className="font-mono text-[10px] text-muted/70">
@@ -409,12 +527,121 @@ export function VisionCard() {
           </div>
 
           <div className="mt-3 rounded-xl border border-white/10 bg-surface/60 px-4 py-2.5">
+            <p className="flex items-center gap-1.5 text-xs text-ink">
+              <CameraIcon className="size-3.5 text-tint" />
+              Webcam capture
+            </p>
+            <p className="font-mono text-[10px] text-muted/70">
+              Probe devices (opens each briefly), capture a frame. Needs the camera capability.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void runProbeCameras()}
+                disabled={probingCams}
+                className={`rounded-lg border border-white/15 px-3 py-1.5 text-xs transition duration-200 ${
+                  probingCams
+                    ? 'cursor-wait text-muted'
+                    : 'cursor-pointer text-muted hover:border-tint/60 hover:text-ink'
+                }`}
+              >
+                {probingCams ? 'Probing…' : 'Test camera'}
+              </button>
+              {cameras ? (
+                <span className="font-mono text-[10px] text-muted">
+                  indices: {cameras.indices.length ? cameras.indices.join(', ') : 'none'} ·
+                  using {cameras.camera_index}
+                </span>
+              ) : null}
+            </div>
+            <input
+              value={cameraQuestion}
+              placeholder="Ask about the frame (optional)"
+              disabled={capturing}
+              onChange={(event) => setCameraQuestion(event.target.value)}
+              className={`${TEXT_CLASS} mt-2`}
+            />
+            <button
+              type="button"
+              onClick={() => void runCapture()}
+              disabled={capturing || !status.opencv_available}
+              className={`mt-2 rounded-lg border border-white/15 px-3 py-1.5 text-xs transition duration-200 ${
+                capturing || !status.opencv_available
+                  ? 'cursor-not-allowed border-white/10 text-muted/50'
+                  : 'cursor-pointer text-muted hover:border-tint/60 hover:text-ink'
+              }`}
+            >
+              {capturing ? 'Capturing…' : 'Capture frame'}
+            </button>
+            {capture ? (
+              <div className="mt-2 space-y-2">
+                <img
+                  src={capture.image}
+                  alt="webcam capture"
+                  className="w-full rounded-lg border border-white/10"
+                />
+                <p className="font-mono text-[10px] text-muted">
+                  {capture.width}x{capture.height}
+                  {capture.path ? ` · ${capture.path}` : ''}
+                </p>
+                {capture.answer ? (
+                  <p className="rounded-lg border border-white/10 bg-surface/70 px-2 py-1.5 text-[11px] whitespace-pre-wrap text-ink">
+                    {capture.answer}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-3 rounded-xl border border-white/10 bg-surface/60 px-4 py-2.5">
+            <p className="flex items-center gap-1.5 text-xs text-ink">
+              <FingerprintIcon className="size-3.5 text-tint" />
+              Read text (OCR)
+            </p>
+            <p className="font-mono text-[10px] text-muted/70">
+              Extract text from an image file on disk. Engine follows the setting above.
+            </p>
+            <input
+              value={ocrPath}
+              placeholder="C:\\path\\to\\image.png"
+              disabled={ocrRunning}
+              onChange={(event) => setOcrPath(event.target.value)}
+              className={`${TEXT_CLASS} mt-2`}
+            />
+            <button
+              type="button"
+              onClick={() => void runOcr()}
+              disabled={ocrRunning || !ocrPath.trim()}
+              className={`mt-2 rounded-lg border border-white/15 px-3 py-1.5 text-xs transition duration-200 ${
+                ocrRunning || !ocrPath.trim()
+                  ? 'cursor-not-allowed border-white/10 text-muted/50'
+                  : 'cursor-pointer text-muted hover:border-tint/60 hover:text-ink'
+              }`}
+            >
+              {ocrRunning ? 'Reading…' : 'Read text'}
+            </button>
+            {ocrResult ? (
+              <div className="mt-2 space-y-1">
+                <p className="font-mono text-[10px] text-muted">
+                  {ocrResult.engine} · {ocrResult.line_count} lines · {ocrResult.elapsed_ms} ms
+                </p>
+                <pre className="max-h-48 overflow-auto rounded-lg border border-white/10 bg-surface/70 px-2 py-1.5 font-mono text-[11px] whitespace-pre-wrap text-ink">
+                  {ocrResult.text || '(no readable text found in the image)'}
+                </pre>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-3 rounded-xl border border-white/10 bg-surface/60 px-4 py-2.5">
             <p className="text-xs text-ink">Models that work</p>
             <p className="font-mono text-[10px] text-muted/70">
               {bundle.catalog.suggested_models.join(' · ')}
             </p>
             <p className="mt-1 font-mono text-[10px] text-muted/70">
               reads {bundle.catalog.supported_types.join(' ')}
+            </p>
+            <p className="mt-1 font-mono text-[10px] text-muted/70">
+              ocr: {bundle.catalog.ocr_engines.join(' | ')}
             </p>
           </div>
         </div>

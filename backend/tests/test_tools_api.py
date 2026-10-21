@@ -88,6 +88,9 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         # Phase 11 — vision (image analysis + screenshot analysis)
         "analyze_image",
         "analyze_screenshot",
+        # Phase 11b — camera capture + OCR
+        "capture_camera",
+        "ocr_image",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"
