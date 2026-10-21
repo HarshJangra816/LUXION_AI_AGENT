@@ -905,6 +905,32 @@ both pre-approved by the user.**
 
 **Still to come in Phase 11** — **11c only** (see below).
 
+### Maintenance — TTS WAV encoding without an undeclared dependency (2026-10-21)
+
+**Bug:** `luxion/voice/tts.py` encoded the synthesised audio with `soundfile`,
+but `soundfile` was never listed in `backend/pyproject.toml` — it only existed
+in the developer's local virtualenv. A clean `pip install -e ".[dev]"`
+therefore produced a backend whose TTS path died with
+`TtsError: soundfile is not installed` (4 failures in
+`tests/test_voice_tts.py`).
+
+**Fix — no new dependency (stdlib `wave`, the same module
+`luxion/voice/audio.py` already uses to play the bytes back):**
+
+- `luxion/voice/tts.py` — `_encode_wav` writes the RIFF/PCM_16 container with
+  `wave` instead of `soundfile`; float32 samples are clipped to [-1, 1] and
+  scaled to int16. The encoder and the playback decoder now use the same
+  stdlib module, so there is nothing left to declare.
+- `tests/test_voice_tts.py` — the `decode_wav` helper decodes with `wave` too,
+  so the round-trip is checked without a third-party decoder.
+
+**Verified:** the new encoder produces a **byte-identical 44-byte RIFF header**
+and **sample-identical audio** to the old `soundfile` output across silence,
+full-scale, half-scale, random, clipping and near-silent inputs (max
+difference 1 LSB of int16). `pytest` **792 passed, 1 skipped** with
+`soundfile` uninstalled, `ruff check` + `ruff format --check` clean (213
+files).
+
 ### Phase 11a — Vision core (✅ done 2026-10-21, committed `ec89263`)
 
 User-confirmed choices (asked before building): **vision transport = extend the

@@ -14,6 +14,7 @@ import logging
 import re
 import tempfile
 import threading
+import wave
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -185,13 +186,19 @@ class OmniVoiceTts:
 
 
 def _encode_wav(audio: np.ndarray, sample_rate: int) -> bytes:
-    """float32 mono -> in-memory PCM WAV bytes."""
-    try:
-        import soundfile as sf
-    except ImportError as exc:
-        raise TtsError("soundfile is not installed") from exc
+    """float32 mono -> in-memory PCM WAV bytes.
+
+    The RIFF/PCM_16 container is written with the stdlib ``wave`` module -
+    the same one ``luxion.voice.audio`` uses to play the bytes back - so the
+    TTS path needs no third-party audio library.
+    """
+    samples = np.round(np.clip(audio, -1.0, 1.0) * 32767.0).astype("<i2")
     buffer = io.BytesIO()
-    sf.write(buffer, audio, sample_rate, format="WAV", subtype="PCM_16")
+    with wave.open(buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(samples.tobytes())
     return buffer.getvalue()
 
 

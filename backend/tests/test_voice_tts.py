@@ -35,10 +35,12 @@ def clean_tts_cache():
 
 def decode_wav(data: bytes) -> tuple[np.ndarray, int]:
     import io
+    import wave
 
-    import soundfile as sf
-
-    audio, rate = sf.read(io.BytesIO(data), dtype="float32")
+    with wave.open(io.BytesIO(data), "rb") as wav_file:
+        rate = wav_file.getframerate()
+        frames = wav_file.readframes(wav_file.getnframes())
+    audio = np.frombuffer(frames, dtype="<i2").astype(np.float32) / 32768.0
     return np.atleast_1d(audio), int(rate)
 
 
