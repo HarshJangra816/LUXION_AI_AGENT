@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from luxion.tools.base import Tool
 from luxion.tools.builtin.apps import BUILTIN_TOOLS as _APPS
+from luxion.tools.builtin.auth_tools import BUILTIN_TOOLS as _AUTH
 from luxion.tools.builtin.browser import BUILTIN_TOOLS as _BROWSER
 from luxion.tools.builtin.code import BUILTIN_TOOLS as _CODE
 from luxion.tools.builtin.desktop import BUILTIN_TOOLS as _DESKTOP
@@ -31,6 +32,7 @@ BUILTIN_TOOLS: list[Tool] = [
     *_SYSTEM,
     *_SCREENSHOT,
     *_VISION,
+    *_AUTH,
     *_FILES,
     *_APPS,
     *_DESKTOP,

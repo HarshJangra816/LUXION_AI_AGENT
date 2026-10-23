@@ -28,6 +28,9 @@ Values come from (in increasing priority):
 10. The web-intelligence edits saved from the Settings → Web page
    (``<data_dir>/web.json`` — partial overlay, see
    :func:`apply_web_overrides`)
+11. The authentication edits saved from Settings → Integrations →
+   Authentication (``<data_dir>/biometrics.json`` — partial overlay, see
+   :func:`apply_biometrics_overrides`)
 
 No secrets are ever hardcoded here. API keys are referenced either
 directly through a secret-typed setting or via an environment variable
@@ -44,6 +47,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from luxion.config import (
+    biometrics_override,
     browser_override,
     code_override,
     desktop_override,
@@ -716,6 +720,56 @@ def _valid_vision_values(values: dict[str, object]) -> dict[str, object]:
     return accepted
 
 
+class BiometricsConfig(BaseModel):
+    """Voice + face authentication policy (PRD §27, §28, Phase 11c).
+
+    ``mode`` is PRD §28's four-state security configuration: which second
+    factors are in play. It is *policy*, layered under the ``biometrics``
+    capability — the capability is the hard "may Luxion do this at all?"
+    consent (default OFF), the mode decides which of the two factors are
+    offered once it is granted.
+
+    The thresholds are similarity scores in the two engines' own scales:
+
+    * ``voice_threshold`` — ``1 / (1 + mean DTW cost)`` of the MFCC
+      trajectories, so ``1.0`` is an identical recording;
+    * ``face_threshold`` — the SFace cosine similarity (``-1..1``).
+
+    Both are re-tunable from Settings because "how sure is sure enough" is a
+    judgement call, not a constant.
+    """
+
+    #: Which second factors are in play (PRD §28's box: voice only / face only
+    #: / voice + face / disabled).
+    mode: Literal["disabled", "voice_only", "face_only", "voice_face"] = "voice_face"
+    #: Seconds of speech captured for one enrollment or verification.
+    voice_duration_s: float = Field(default=3.0, ge=1.0, le=15.0)
+    #: Voice score at or above which the answer is "same speaker" (0..1).
+    voice_threshold: float = Field(default=0.55, ge=0.0, le=1.0)
+    #: Face score at or above which the answer is "same face" (cosine, 0..1).
+    face_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
+    #: PRD §27/§28 both cap a modality at five configured profiles.
+    max_profiles: int = Field(default=5, ge=1, le=5)
+
+
+def _valid_biometrics_values(values: dict[str, object]) -> dict[str, object]:
+    """Drop anything that is not a real :class:`BiometricsConfig` field.
+
+    Same rule as :func:`_valid_vision_values`: a hand-edited
+    ``biometrics.json`` must never take the app down.
+    """
+    accepted: dict[str, object] = {}
+    for key, value in values.items():
+        if key not in BiometricsConfig.model_fields:
+            continue
+        try:
+            BiometricsConfig(**{key: value})
+        except Exception:  # noqa: BLE001 - a bad value only skips that key
+            continue
+        accepted[key] = value
+    return accepted
+
+
 class EmailConfig(BaseModel):
     """Email policy (PRD §33.4, Phase 10).
 
@@ -923,6 +977,7 @@ class Settings(BaseSettings):
     code: CodeConfig = CodeConfig()
     web: WebConfig = WebConfig()
     vision: VisionConfig = VisionConfig()
+    biometrics: BiometricsConfig = BiometricsConfig()
     email: EmailConfig = EmailConfig()
     whatsapp: WhatsAppConfig = WhatsAppConfig()
     notify: NotificationConfig = NotificationConfig()
@@ -1174,6 +1229,34 @@ def save_vision_overrides(settings: Settings, values: dict[str, object]) -> None
     reset_settings_cache()
 
 
+def apply_biometrics_overrides(settings: Settings) -> None:
+    """Overlay the persisted Settings → Authentication edits onto the policy.
+
+    Called by :func:`get_settings` last, so ``<data_dir>/biometrics.json``
+    wins over ``LUXION_BIOMETRICS__*`` exactly like the other overlays.
+    """
+    values = _valid_biometrics_values(biometrics_override.load_overrides(settings.app.data_dir))
+    if not values:
+        return
+    settings.biometrics = BiometricsConfig(**{**settings.biometrics.model_dump(), **values})
+
+
+def save_biometrics_overrides(settings: Settings, values: dict[str, object]) -> None:
+    """Persist a partial authentication overlay and refresh cached settings.
+
+    Merges into what is already stored (same reason as
+    :func:`save_vision_overrides`): a patch only carries the fields the user
+    changed, and writing it verbatim would silently revert the rest.
+    """
+    valid = _valid_biometrics_values(values)
+    if valid:
+        biometrics_override.save_overrides(
+            settings.app.data_dir,
+            {**biometrics_override.load_overrides(settings.app.data_dir), **valid},
+        )
+    reset_settings_cache()
+
+
 def apply_email_overrides(settings: Settings) -> None:
     """Overlay the persisted Settings → Email edits onto ``settings.email``.
 
@@ -1262,6 +1345,7 @@ def get_settings() -> Settings:
     apply_code_overrides(settings)
     apply_web_overrides(settings)
     apply_vision_overrides(settings)
+    apply_biometrics_overrides(settings)
     apply_email_overrides(settings)
     apply_whatsapp_overrides(settings)
     apply_notify_overrides(settings)

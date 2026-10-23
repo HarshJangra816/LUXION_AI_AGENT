@@ -159,6 +159,14 @@ CAPABILITIES: tuple[Capability, ...] = (
         "Accounts",
         "Read and create events through a connected calendar source.",
     ),
+    Capability(
+        "biometrics",
+        "Biometric authentication",
+        "app",
+        "Consent",
+        "Verify who you are from your voice or your face (second factor).",
+        default=False,
+    ),
 )
 
 _BY_ID: dict[str, Capability] = {cap.id: cap for cap in CAPABILITIES}

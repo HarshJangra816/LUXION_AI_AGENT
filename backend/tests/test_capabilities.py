@@ -73,6 +73,7 @@ def test_registry_is_well_formed() -> None:
         "input_control",
         "terminal",
         "calendar",
+        "biometrics",
     ]
     for cap in CAPABILITIES:
         assert cap.label and cap.description
@@ -202,7 +203,7 @@ def test_capability_allows_when_granted(settings: Settings, store: CapabilitySto
 
 
 def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
-    """Exactly the screen, input, terminal and notification tools are gated.
+    """Exactly the screen, input, terminal, notification and auth tools are gated.
 
     Everything else runs on autonomy alone, so a capability toggle can never
     silently widen what a tool is allowed to do.
@@ -229,6 +230,10 @@ def test_only_gated_tools_declare_a_capability(settings: Settings) -> None:
         "git_clone": "terminal",
         "github_prs": "terminal",
         "notify": "notifications",
+        "enroll_voice": "biometrics",
+        "verify_voice": "biometrics",
+        "enroll_face": "biometrics",
+        "verify_face": "biometrics",
     }
 
 

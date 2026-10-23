@@ -203,6 +203,16 @@ export function CheckIcon({ className }: IconProps) {
   )
 }
 
+/** Shield with a check — voice/face second factor (Phase 11c). */
+export function ShieldCheckIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M12 3.5l7 2.8v5.4c0 3.9-2.9 6.6-7 8.8-4.1-2.2-7-4.9-7-8.8V6.3l7-2.8z" />
+      <path d="M9.2 12.2l1.9 1.9 3.7-3.9" />
+    </svg>
+  )
+}
+
 export function XIcon({ className }: IconProps) {
   return (
     <svg {...base} className={className}>

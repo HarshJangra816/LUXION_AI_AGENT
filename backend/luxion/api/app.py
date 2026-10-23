@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 
 from luxion import __version__
 from luxion.api.routes import (
+    auth,
     browser,
     capabilities,
     code,
@@ -103,6 +104,7 @@ def create_app() -> FastAPI:
     app.include_router(code.router, prefix=API_PREFIX)
     app.include_router(web.router, prefix=API_PREFIX)
     app.include_router(vision.router, prefix=API_PREFIX)
+    app.include_router(auth.router, prefix=API_PREFIX)
     app.include_router(email.router, prefix=API_PREFIX)
     app.include_router(whatsapp.router, prefix=API_PREFIX)
     app.include_router(notify.router, prefix=API_PREFIX)

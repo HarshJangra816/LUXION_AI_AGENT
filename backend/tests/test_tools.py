@@ -99,6 +99,11 @@ EXPECTED_BUILTIN_TOOLS = {
     # Phase 11b — PRD §11 camera + OCR
     "capture_camera",
     "ocr_image",
+    # Phase 11c — PRD §27/§28 voice + face second factor
+    "enroll_voice",
+    "verify_voice",
+    "enroll_face",
+    "verify_face",
 }
 
 

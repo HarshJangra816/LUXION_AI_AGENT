@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getCapabilities, type CapabilityReport } from '../../lib/capabilities'
 import { BrowserCard } from '../settings/BrowserCard'
+import { AuthCard } from '../settings/AuthCard'
 import { CodeCard } from '../settings/CodeCard'
 import { DesktopCard } from '../settings/DesktopCard'
 import { EmailCard } from '../settings/EmailCard'
@@ -46,6 +47,7 @@ export function IntegrationsPage() {
       <CodeCard />
       <WebCard />
       <VisionCard />
+      <AuthCard />
     </div>
   )
 }

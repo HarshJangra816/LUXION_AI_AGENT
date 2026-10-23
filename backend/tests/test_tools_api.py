@@ -91,6 +91,11 @@ def test_catalog_lists_the_initial_toolset(client: TestClient) -> None:
         # Phase 11b — camera capture + OCR
         "capture_camera",
         "ocr_image",
+        # Phase 11c — voice + face second factor (PRD §27/§28)
+        "enroll_voice",
+        "verify_voice",
+        "enroll_face",
+        "verify_face",
     }
     remember = next(tool for tool in body["tools"] if tool["name"] == "remember")
     assert remember["risk"] == "medium"

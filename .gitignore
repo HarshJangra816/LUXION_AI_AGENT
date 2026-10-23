@@ -41,6 +41,11 @@ database/*.json
 database/*.json.tmp
 # Local calendar Luxion writes to (Settings → connect local .ics)
 database/*.ics
+# Regenerated model + biometric state, never source (fetched on first use of
+# the vision/OCR and voice+face auth families)
+database/vision_models/
+database/biometrics/
+*.onnx
 logs/
 *.log
 
