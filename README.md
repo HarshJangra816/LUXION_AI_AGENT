@@ -240,7 +240,7 @@ machine). See [memory.md](memory.md) for the full phase log and
 |--|-------|--------|
 | ✅ | 0–10 | Architecture → communication (see above) |
 | ✅ | 11 | Vision + Hardware — **complete** (vision core, camera + OCR, voice/face auth) |
-| ⬜ | 12 | 3D Orb (interaction & behaviour) |
+| 🚧 | 12 | 3D Orb (interaction & behaviour) |
 | ⬜ | 13 | Advanced Agent |
 
 ## Contributing
