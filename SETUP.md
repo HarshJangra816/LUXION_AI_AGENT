@@ -11,7 +11,7 @@ on Windows APIs).
 A **local-first personal AI agent**: a FastAPI backend (Python 3.11+) with a
 React 19 + Vite frontend, packaged as an optional Tauri 2 desktop app. You
 chat with a local or cloud LLM; when a request needs an action, the model calls
-one of **66 tools** on your machine — files, browser, desktop apps, code,
+one of **70 tools** on your machine — files, browser, desktop apps, code,
 calendar, live web data, email, WhatsApp, Windows notifications, **image
 analysis** and **webcam capture + OCR**. Every capability has a permission gate
 you control.
@@ -156,11 +156,13 @@ window that hosts the same UI. For an installer: `npx tauri build`.
 3. **Settings → AI provider → Test connection** — verifies the model endpoint
    and lists the models it reports. If it fails, check §11 Troubleshooting.
 4. **Tools → Permissions & capabilities** — grant what you want the agent to
-   use. Nine capabilities are registered; notable defaults:
+   use. Ten capabilities are registered; notable defaults:
    - **Screen capture** is *prompted* — the model can't take screenshots until
      you press **Allow** here.
    - **Terminal** is **OFF** — command execution, tests, installs and git tools
      stay denied until you enable it (this is deliberate).
+   - **Biometrics** is **OFF** — voice/face enrollment and verification stay
+     denied until you enable it (the templates never leave this machine).
    - **Keyboard & mouse control** (`input_control`) gates the raw-injection
      desktop tools (type, click, hotkeys).
    - **Microphone / speaker** — required for voice; **camera / location** are
@@ -224,7 +226,7 @@ What Luxion remembers, and how retrieval works.
 
 Two collapsible cards:
 
-- **Tools** — the full catalog (**66 tools**) grouped by family with risk
+- **Tools** — the full catalog (**70 tools**) grouped by family with risk
   badges (low / medium / high / critical). Per-tool override: **Autonomy
   default / Allow / Ask first / Deny**. "Recent tool activity" is the audit
   log (newest first). Autonomy level and the high-risk guardrail still apply
@@ -304,6 +306,20 @@ and Save:
     always transcribes through the model. Shows line count, elapsed ms and
     the transcription. Works with Vision turned off when RapidOCR is present,
     because neither path costs a model call.
+- **Authentication** — voice + face second factors ("who said it?" / "who is
+  on camera?"). Both templates stay **on this machine**: a voiceprint is an
+  MFCC trajectory aligned by dynamic time warping, a faceprint is a SFace
+  embedding from the YuNet detector. Pick a **mode** (Disabled / Voice only /
+  Face only / Voice + Face — default is Voice + Face, but the whole family is
+  off until you grant the **biometrics** capability in **Tools → Permissions &
+  capabilities**), the capture length and each factor's match **threshold**
+  (both re-tunable — "how sure is sure enough" is a judgement call); **Save**
+  writes `biometrics.json`. Enroll a named profile (microphone or webcam, or
+  pass a WAV / image path instead), then **Verify** — with no name it scores
+  every enrolled profile and reports the best match, which is the "who said
+  it?" answer. Up to 5 profiles per modality. The two face models (YuNet
+  ~230 KB, SFace ~37 MB) download once into `data\vision_models\` on first
+  use; nothing is fetched when Settings loads.
 
 ### Settings
 
@@ -437,6 +453,7 @@ read from the project root.
 | Vision | `LUXION_VISION__ENABLED/MODEL/PROVIDER/BASE_URL/API_KEY_ENV/PROMPT/MAX_IMAGES/MAX_DIMENSION/MAX_BYTES/TIMEOUT_S` | the vision model + image limits (the model call reuses your chat provider, so no new key is usually needed) |
 | Vision (camera) | `LUXION_VISION__CAMERA_INDEX/CAMERA_WIDTH/CAMERA_HEIGHT/CAMERA_WARMUP_FRAMES` | webcam device and requested frame size (default index 0, 1280×720, 3 warm-up frames) |
 | Vision (OCR) | `LUXION_VISION__OCR_ENGINE/OCR_PROMPT` | `auto` \| `rapidocr` \| `vision` (default `auto`) and the prompt used when the vision model transcribes instead of RapidOCR |
+| Biometrics | `LUXION_BIOMETRICS__MODE/VOICE_DURATION_S/VOICE_THRESHOLD/FACE_THRESHOLD/MAX_PROFILES` | voice + face second factors: `disabled` \| `voice_only` \| `face_only` \| `voice_face` (default `voice_face`), capture length, and each factor's match threshold (the whole family still needs the **biometrics** capability) |
 | Email | `LUXION_EMAIL__ENABLED/SMTP_HOST/SMTP_PORT/SMTP_SECURITY/SMTP_USERNAME/SMTP_PASSWORD/SMTP_PASSWORD_ENV/IMAP_HOST/IMAP_PORT/FROM_NAME/FROM_ADDRESS/SIGNATURE/TIMEOUT_S/READ_LIMIT` | send via SMTP, read via IMAP — the password lives in `.env` only, never in the overlay |
 | WhatsApp | `LUXION_WHATSAPP__ENABLED/HEADLESS/PROFILE_DIR/TIMEOUT_S/LOGIN_TIMEOUT_S` | WhatsApp Web automation (persistent login profile) |
 | Notifications | `LUXION_NOTIFY__ENABLED/APP_NAME/DEFAULT_DURATION_S/SOUND/COOLDOWN_S` | Windows toast notifications |
@@ -452,6 +469,9 @@ read from the project root.
 | `rag.json` | Memory card | embedding model, retrieval knobs |
 | `browser.json` / `desktop.json` / `code.json` / `web.json` | Integrations cards | per-family overrides |
 | `vision.json` | Vision card | vision model, endpoint and image limits |
+| `biometrics.json` | Authentication card | security mode, capture length, match thresholds (never the templates) |
+| `vision_models/` | vision + auth, once | the RapidOCR models and the YuNet/SFace face models — fetched on first use, never source |
+| `biometrics/` | enroll tools | voiceprints + faceprints (an index + one `.npz` per profile) — local templates, never uploaded |
 | `email.json` / `whatsapp.json` / `notify.json` | Integrations cards | communication overrides (never holds the SMTP password) |
 | `calendar_sources.json` | Permissions card | connected `.ics` files and iCal subscriptions |
 | `capabilities.json` | Permissions card | in-app capability consents |
@@ -466,7 +486,7 @@ read from the project root.
 ## 10. Verify your install (optional)
 
 ```powershell
-# Backend tests + lint  (793 tests, ~56 s)
+# Backend tests + lint  (836 tests, ~55 s)
 cd backend
 .\.venv\Scripts\python.exe -m pytest
 .\.venv\Scripts\python.exe -m ruff check .
@@ -509,6 +529,9 @@ tool results on cp1252.)
 | Wake word triggers while TTS speaks | Speaker echo — use headphones, or enable barge-in only in quiet rooms (Voice card). |
 | `analyze_image` answers "vision is turned off" | Turn the family on in **Integrations → Vision** (or `LUXION_VISION__ENABLED=true`). |
 | `analyze_image` answers "no model" / gibberish | The chat model can't see. Set **Vision model** to a vision checkpoint (`ollama pull qwen2.5vl:3b`) and press **Test endpoint**. |
+| Enroll/verify tools answer "biometrics is not enabled" | The **biometrics** capability ships **off** — enable it in **Tools → Permissions & capabilities**. |
+| Enroll face says the models could not be fetched | The YuNet/SFace `.onnx` files download once from `raw.githubusercontent.com/opencv/opencv_zoo` into `data\vision_models\` — check the network (or copy the two files in by hand) and retry. |
+| Verify always answers "no match" | Thresholds are judgement calls. Lower **voice threshold** / **face threshold** in **Integrations → Authentication**, or re-enroll — the voice threshold in particular is tuned against real recordings, and quiet/clean audio scores much higher than noisy clips. |
 | `capture_camera` / **Test camera** says it could not open | Missing, busy in another app, or blocked — check **Settings → Privacy → Camera** on Windows and that the **camera** capability is allowed. `POST /api/vision/cameras` lists the indices the driver reports. |
 | **Capture frame** saved but the preview looks black | Point it at a lit subject and try again; the driver needs a few frames to settle auto-exposure, which is what **Warm-up frames** skips. Raise it (e.g. 5) if the first frame is still dark. |
 | `ocr_image` answers "no model" / an empty result | Set **OCR engine** to `auto` (RapidOCR, if `rapidocr-onnxruntime` is installed) for exact text, or `vision` and confirm the vision model above is reachable. |
@@ -542,8 +565,9 @@ tool results on cp1252.)
 
 ---
 
-Happy agenting. Phases 0–10 are shipped and tested, and **Phase 11a (the
-vision core)** and **Phase 11b (the webcam + OCR)** landed on top of them;
-**11c (voice + face authentication)** is next, followed by Phase 12 (3D orb
-behaviour) and Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md)
-and the live status in [memory.md](memory.md).
+Happy agenting. Phases 0–10 are shipped and tested, and **Phase 11 (the
+vision + hardware family)** landed on top of them — 11a the vision core, 11b
+the webcam + OCR, and **11c voice + face authentication** (second factors that
+answer "who said it?" / "who is on camera?", templates kept on this machine).
+Next up: Phase 12 (3D orb behaviour) and Phase 13 (advanced agent). See the
+roadmap in [prd.md](prd.md) and the live status in [memory.md](memory.md).

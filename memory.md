@@ -10,16 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`) |
-| **Next phase** | **Phase 11c — voice + face authentication — NOT STARTED (nothing written yet).** Plan: `backend/luxion/vision/auth.py` (voiceprint = MFCC + DTW over **scipy**; face = OpenCV **YuNet** detection + **SFace** embeddings), new **`biometrics`** app-kind capability in `luxion/security/capabilities.py` (**default OFF**, 9 → 10), tools `enroll_voice` / `verify_voice` / `enroll_face` / `verify_face` (registry **66 → 70**), `/api/auth` routes, `AuthCard` + `lib/auth.ts`. **Zero extra deps beyond OpenCV** — `resemblyzer` was rejected (pins `librosa<0.11`, would downgrade librosa 1.0.0 that OmniVoice needs). **First two things to check when resuming:** (a) how `luxion/voice/` captures mic audio (sample rate / dtype / return type) so the voiceprint can reuse it, and (b) the exact `Tool` + `build_registry` + `/api/routes` conventions in this codebase. After 11c: **Phase 12 — 3D Orb interaction** (core in place), **Phase 13 — Advanced Agent**. Near-term follow-ups: eyeball the Integrations/Vision cards; live-verify a real SMTP/IMAP probe, the WhatsApp QR login and a toast; **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model) |
-| **Last updated** | 2026-10-21 (Phase 11b — webcam capture + OCR: `luxion/vision/camera.py`, `luxion/vision/ocr.py`, `capture_camera` + `ocr_image`, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard camera/OCR panels) |
-| **Backend tests** | **792 passing**, 1 skipped (793 total), `ruff check` + `ruff format --check` clean (213 files) — +48 from Phase 11b, +32 from 11a |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/vision.ts` + `VisionCard.tsx` extended for camera/OCR this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`), **11c ✅** (2026-10-23, committed `39736a7`) |
+| **Next phase** | **Phase 12 — 3D Orb interaction** (core in place — Phase 12 = interaction/behaviour per the PRD), then **Phase 13 — Advanced Agent**. Phase 11 is fully closed (11a/11b/11c). Near-term follow-ups: **tune the voice threshold with a genuine recording** (synthetic sine voices give DTW no real vocal tract, so `voice_threshold=0.55` is provisional), eyeball the Integrations/Vision/Auth cards in the browser, live-verify a real SMTP/IMAP probe and the WhatsApp QR login + toast, and **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model) |
+| **Last updated** | 2026-10-23 (Phase 11c — voice + face second-factor auth: `luxion/vision/auth.py`, `biometrics` capability, `enroll_*`/`verify_*` tools, `/api/auth`, AuthCard) |
+| **Backend tests** | **835 passing**, 1 skipped (836 total), `ruff check` + `ruff format --check` clean (219 files) — +43 from Phase 11c, +48 from 11b, +32 from 11a. (The 11c commit message said 880; the true count is 836 — collect-only verified 2026-10-23.) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/auth.ts` + `AuthCard.tsx` added this session |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch, **all pushed to `origin/main`** (2026-10-21): Phase 11b code as `05c2075` + its docs as `76741c1` (memory.md / README / SETUP), contributor docs as `0939221` (README + GitHub templates) and `039b2e1` (CONTRIBUTING.md), Phase 11a code as `ec89263` + its docs as `a4f5c81`, docs refresh as `12aca78`, Phase 10 as `87c65b1`, **UI restructure as `3d8f77b` (own commit)**, SETUP.md as `fad6cb8`, Phase 9 as `ca27319`. Earlier: Phase 7 `e528940`, Phase 8 `70f02ff`. README refreshed with logo, screenshots (`docs/assets/`), demo video |
+| **Git** | main branch, **Phase 11c code pushed as `39736a7`** (rebased onto `origin/main` 2026-10-23; origin meanwhile gained the TTS `wave` fix `f2c1b2c` (#1) and the CI workflow `2c72913` (#2)). Docs commit follows this one. Earlier: Phase 11b as `05c2075` + docs `76741c1`, contributor docs `0939221` + `039b2e1`, Phase 11a `ec89263` + docs `a4f5c81`, docs refresh `12aca78`, Phase 10 `87c65b1`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 9 `ca27319`, Phase 7 `e528940`, Phase 8 `70f02ff`. README has a CI badge; GitHub Actions (`ci.yml`) now enforces the quality gates on push/PR |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
-| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). Keep new phases on this diet. |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). **Phase 11c added zero** (MFCC+DTW over the already-installed numpy; YuNet/SFace ride the same `opencv-contrib-python` wheel, and `resemblyzer` was rejected for pinning `librosa<0.11`). Keep new phases on this diet. |
 
 ---
 
@@ -816,12 +816,79 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 8 | Coding Agent | ✅ **done (2026-10-15, committed `70f02ff`)** — `luxion/coding/` (analyzer + grep + terminal + git/gh) + 11 tools (`analyze_project`, `grep_code`, `edit_file`, `run_command`, `run_tests`, `install_dependencies`, `git_status`, `git_diff`, `git_commit`, `git_clone`, `github_prs`), `terminal` capability (default OFF), `code.json` overlay, `/api/code` routes, Settings → Coding card, 49 tests; **milestone "fix this project" proven live** (red → edit → green → commit); zero new Python deps |
 | 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ✅ **done (2026-10-20, committed `87c65b1`)** — `luxion/email/` (smtplib send + imaplib read + MIME + drafts), `luxion/whatsapp/` (persistent Playwright Web session + DOM ops + `whatsapp://` protocol), `luxion/notify/` (PowerShell WinRT toast) + 8 tools (`email_draft`, `email_send`, `email_send_draft`, `email_read`, `whatsapp_send`, `whatsapp_read`, `whatsapp_open`, `notify`) → registry **62**, `EmailConfig`/`WhatsAppConfig`/`NotificationConfig` + `email.json`/`whatsapp.json`/`notify.json` overlays + `/api/email` (+ probe + drafts) + `/api/whatsapp` (+ session/QR/close) + `/api/notify` (+ test toast), Settings → Integrations gains **Email · WhatsApp · Notifications** cards, +91 tests, zero new deps; SMTP password env-only everywhere |
-| 11 | Vision + Hardware | 🚧 **11a done (2026-10-21, `ec89263`)** — vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools → registry **64**, zero new deps, +32 tests. **11b done (2026-10-21, `05c2075`)** — `camera.py` (OpenCV webcam) + `ocr.py` (RapidOCR / vision), `capture_camera` + `ocr_image` → registry **66**, `VisionConfig` camera + OCR knobs, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard panels, 2 new FOSS deps, +48 tests (793 total), **live-verified on the HP True Vision webcam**. **11c** = voice/face auth (`biometrics` capability) → registry 70 |
+| 11 | Vision + Hardware | ✅ **done (2026-10-23)** — **11a (2026-10-21, `ec89263`)** vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools → registry **64**, zero new deps, +32 tests. **11b (2026-10-21, `05c2075`)** — `camera.py` (OpenCV webcam) + `ocr.py` (RapidOCR / vision), `capture_camera` + `ocr_image` → registry **66**, `VisionConfig` camera + OCR knobs, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard panels, 2 new FOSS deps, +48 tests, **live-verified on the HP True Vision webcam**. **11c (2026-10-23, `39736a7`)** — `vision/auth.py` (MFCC+DTW voiceprint, YuNet+SFace faceprint), `biometrics` capability (default OFF, 9 → 10), `enroll_voice`/`verify_voice`/`enroll_face`/`verify_face` → registry **70**, `biometrics.json` overlay + `/api/auth` + AuthCard, zero new deps, +43 tests (836 total) |
 | 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
 | 13 | Advanced Agent | ⬜ |
 
 
 ## Latest Update
+
+### Phase 11c — Voice + Face Authentication (✅ done 2026-10-23, committed `39736a7`)
+
+**11c (this session) — PRD §27/§28/§33.2. Luxion can now answer "who said
+it?" and "who is on camera?" — deliberately separate from speech recognition,
+which answers "what was said?". Both factors are local: no template leaves the
+machine. Zero new Python dependencies.**
+
+- **`backend/luxion/vision/auth.py`** — the whole family. **Voiceprint** =
+  MFCC (13 coefficients + 13 deltas) computed over a **pure-numpy**
+  FFT/mel-filterbank/DCT, aligned by **dynamic time warping**; similarity is
+  `1/(1+mean DTW cost)` so 1.0 = identical recording. numpy alone suffices —
+  scipy is only a transitive dep and dropping it keeps the zero-extra-deps
+  claim honest (`resemblyzer` was rejected outright: it pins `librosa<0.11`,
+  which would downgrade librosa 1.0.0 that OmniVoice needs).
+  **Faceprint** = OpenCV **YuNet** detection → **SFace** 128-D embedding →
+  cosine. Gotcha encoded in a test: `match()` is an *instance* method in the
+  OpenCV 5 bindings and takes an integer `dis_type` (0 = `FR_COSINE`), not the
+  `"cosine"` string older bindings accepted.
+- **Models fetched lazily, never on Settings load** — `MODEL_SPECS` pins the
+  two Apache-2.0 opencv_zoo files, downloaded once into
+  `<data_dir>/vision_models/` via write-then-rename; `models_ready()` reports
+  per-model state. Templates live in `<data_dir>/biometrics/` (an index +
+  one `.npz` per profile), up to **5 profiles per modality** (PRD §27/§28 cap).
+- **Safety rails, in order**: the `biometrics` app-consent capability
+  (`security/capabilities.py`, **default OFF**, 9 → 10) → the security **mode**
+  (PRD §28's four states: `disabled` / `voice_only` / `face_only` /
+  `voice_face`) → the **hardware gate** for the capture (`microphone` /
+  `camera`). `require_factor()` / `require_hardware()` enforce the chain and
+  the executor blocks on `requires="biometrics"` before the risk engine even
+  runs.
+- **`BiometricsConfig`** (`settings.py`) + `biometrics.json` overlay
+  (`config/biometrics_override.py`, same never-raise contract as every other
+  overlay): `mode` (default `voice_face`), `voice_duration_s` (3.0),
+  `voice_threshold` (**0.55 — provisional**, see live-verification below),
+  `face_threshold` (0.35), `max_profiles` (5).
+- **Tools** (registry **66 → 70**): `enroll_voice` / `verify_voice` /
+  `enroll_face` / `verify_face`, all `requires="biometrics"`. Enroll is
+  medium-risk mutating, verify is low-risk read-only. **Verify without a name
+  scores every profile and reports the best** — that is the §27 "who said
+  it?" answer.
+- **`/api/auth`** (`routes/auth.py`) — `GET /auth` (effective policy +
+  defaults + status + catalog), `PUT|DELETE /auth/config`, `GET /auth/profiles`,
+  `DELETE /auth/profiles/{modality}/{name}`, and `POST /auth/enroll` +
+  `POST /auth/verify` which run **exactly the code the tools run** so the card
+  can prove the family works (an unverifiable biometric is a silent failure
+  otherwise). All opt-in buttons — nothing opens the mic or camera as a side
+  effect of loading Settings. `AuthConfigPatch` is `extra="forbid"` + a test
+  keeps it in sync with `BiometricsConfig`.
+- **Frontend** — `AuthCard.tsx` (Settings → Integrations, mirrors VisionCard)
+  + `lib/auth.ts` + a `ShieldCheckIcon`.
+- **Tests** — `tests/test_auth.py` (30) + `tests/test_auth_api.py` (13).
+  Suite **793 → 836** (835 passing, 1 skipped). *The commit message says 880
+  — that was a miscount; `--collect-only` says 836.*
+
+**Live verification on this machine (2026-10-23)** — enroll → detect (0.913
+confidence) → embed → cosine **1.0 for the same face** against the real
+opencv_zoo models and real photos. **The voice threshold stays provisional**:
+synthetic sine voices give DTW no real vocal tract to align, so
+`voice_threshold=0.55` needs a genuine recording to tune.
+
+**Gates (re-run 2026-10-23 after rebasing onto the CI + TTS-wave commits)**:
+pytest **835 passed, 1 skipped**, `ruff check` + `ruff format --check` clean
+(219 files), `oxlint` clean, `tsc -b` exit 0, `vite build` ok. One
+`test_real_rapidocr_reads_a_rendered_line` failure seen once under concurrent
+pytest runs — flaky onnxruntime session init, passes in isolation and in the
+clean full-suite run.
 
 ### Phase 11b — Camera + OCR (✅ done 2026-10-21, committed `05c2075`)
 

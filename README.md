@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/phase-11%20%C2%B7%20vision%20%2B%20hardware-0ea5e9?style=flat-square&labelColor=020a16" alt="Phase 11" />
   <img src="https://img.shields.io/badge/tests-792%20passed-10b981?style=flat-square&labelColor=020a16" alt="792 tests passing, 1 skipped" />
   <img src="https://img.shields.io/github/actions/workflow/status/HarshJangra816/LUXION_AI_AGENT/ci.yml?style=flat-square&labelColor=020a16&label=CI" alt="CI" />
-  <img src="https://img.shields.io/badge/tools-66-10b981?style=flat-square&labelColor=020a16" alt="66 tools" />
+  <img src="https://img.shields.io/badge/tools-70-10b981?style=flat-square&labelColor=020a16" alt="70 tools" />
   <img src="https://img.shields.io/badge/license-MIT-10b981?style=flat-square&labelColor=020a16" alt="MIT license" />
   <img src="https://img.shields.io/badge/Tauri-2-24C8DB?style=flat-square&logo=tauri&logoColor=white" alt="Tauri 2" />
   <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
@@ -69,7 +69,7 @@ cards into their own pages (see [SETUP.md](SETUP.md)):
 Everything below is **shipped and tested** (Phases 0–11a), except where marked
 *in progress*:
 
-- **Chat that acts** — streaming replies driven by a **66-tool agent loop**:
+- **Chat that acts** — streaming replies driven by a **70-tool agent loop**:
   files, memory, repository search, browser, desktop, code, web, mail and
   vision. Every call passes an autonomy matrix with confirmations and an
   audit log.
@@ -189,7 +189,7 @@ Luxion/
 │   │   ├── rag/            # chunking, embeddings, sqlite-vec store
 │   │   ├── repository/     # workspace scan, index, code retrieval
 │   │   ├── security/       # capabilities + consent layer
-│   │   ├── tools/          # tool framework + 66 builtins
+│   │   ├── tools/          # tool framework + 70 builtins
 │   │   ├── vision/         # image pipeline, camera, OCR, model calls (Phase 11)
 │   │   ├── voice/          # mic, STT, TTS, wake word
 │   │   ├── web/            # search, weather, news, movies, finance… (Phase 9)
@@ -218,9 +218,9 @@ npm run lint                      # oxlint
 
 ## Current status
 
-**Phases 0–10 complete, Phase 11a + 11b done** — architecture;
+**Phases 0–10 complete, Phase 11 complete (11a + 11b + 11c)** — architecture;
 streaming chat + provider adapters (Ollama / OpenRouter / OpenAI-compatible,
-tap-to-switch); context manager; tool framework with **66 built-ins**, autonomy
+tap-to-switch); context manager; tool framework with **70 built-ins**, autonomy
 matrix, confirmations and audit log; capabilities & consent (OS probe, app
 consents, risk engine); voice (STT, TTS, wake word, barge-in); memory store +
 RAG index + context injection; repository indexing + `search_code`; browser
@@ -229,15 +229,17 @@ agent (Playwright + YouTube + Wikipedia); computer automation (Windows control
 git/gh); web intelligence (seven keyless sources with provenance stamps);
 communication (email over SMTP/IMAP, WhatsApp Web, Windows toasts); and
 **vision** (image + screenshot analysis through a vision model on your existing
-provider, plus webcam capture and OCR). See [memory.md](memory.md) for the full
-phase log and [SETUP.md](SETUP.md) for the user guide.
+provider, webcam capture, OCR, and **voice + face second-factor authentication**
+— MFCC/DTW voiceprints and YuNet/SFace faceprints, templates kept on this
+machine). See [memory.md](memory.md) for the full phase log and
+[SETUP.md](SETUP.md) for the user guide.
 
 ## Roadmap
 
 | | Phase | Status |
 |--|-------|--------|
 | ✅ | 0–10 | Architecture → communication (see above) |
-| 🚧 | 11 | Vision + Hardware — **11a + 11b done** (vision core, camera + OCR); 11c voice/face auth |
+| ✅ | 11 | Vision + Hardware — **complete** (vision core, camera + OCR, voice/face auth) |
 | ⬜ | 12 | 3D Orb (interaction & behaviour) |
 | ⬜ | 13 | Advanced Agent |
 

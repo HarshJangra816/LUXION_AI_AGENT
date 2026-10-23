@@ -7,9 +7,9 @@ This guide covers how to set the project up, the conventions the codebase
 follows, how to add a tool (the most common contribution), and what we expect
 from a pull request.
 
-**Current state:** Phases 0–11a shipped — **64 built-in tools**, **745 tests**,
+**Current state:** Phases 0–11 shipped — **70 built-in tools**, **836 tests**,
 memory + RAG, browser/desktop/coding/web agents, email + WhatsApp + toast
-notifications, and vision.
+notifications, and vision (image analysis, camera, OCR, voice + face auth).
 
 - Product requirements (source of truth): [`prd.md`](prd.md)
 - Install & usage guide: [`SETUP.md`](SETUP.md)
@@ -183,7 +183,7 @@ Luxion/
 │   │   ├── web/            # search, weather, news, movies, finance, speed
 │   │   ├── calendar/       # .ics sources and events
 │   │   └── services/       # chat orchestration, conversations, usage
-│   └── tests/              # pytest suite (745 tests)
+│   └── tests/              # pytest suite (836 tests)
 ├── frontend/
 │   ├── src/
 │   │   ├── components/     # shared UI + three/ (the 3D core)
@@ -393,7 +393,7 @@ anything:
 Run these before every push. All five must be clean.
 
 ```powershell
-# Backend — 745 tests, 1 skipped (needs the gh CLI)
+# Backend — 836 tests, 1 skipped (symlink creation not permitted on some machines)
 cd backend
 .\.venv\Scripts\pytest.exe
 .\.venv\Scripts\ruff.exe check .
