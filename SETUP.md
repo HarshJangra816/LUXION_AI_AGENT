@@ -568,6 +568,7 @@ tool results on cp1252.)
 Happy agenting. Phases 0–10 are shipped and tested, and **Phase 11 (the
 vision + hardware family)** landed on top of them — 11a the vision core, 11b
 the webcam + OCR, and **11c voice + face authentication** (second factors that
-answer "who said it?" / "who is on camera?", templates kept on this machine).
+answer "who said it?" / "who is on camera?", templates kept on this machine) completed
+and available soon.
 Next up: Phase 12 (3D orb behaviour) and Phase 13 (advanced agent). See the
 roadmap in [prd.md](prd.md) and the live status in [memory.md](memory.md).
