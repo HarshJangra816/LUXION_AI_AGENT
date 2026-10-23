@@ -111,6 +111,16 @@ def reset_recorder() -> None:
     set_recorder(None)
 
 
+def recorder_installed() -> bool:
+    """True when a fake capture replaced the microphone (the test seam).
+
+    The seam covers the *whole* capture, device lookup included: a CI runner
+    has no input device to resolve, so ``_voice_clip`` must not ask for one
+    when the fake is in place.
+    """
+    return _RECORDER is not None
+
+
 def load_wav(path: str | Path) -> tuple[np.ndarray, str]:
     """Read a WAV file into mono float32 samples at :data:`TARGET_RATE`.
 
@@ -778,15 +788,21 @@ def _voice_clip(
         samples, label = load_wav(path)
     else:
         require_hardware(settings, "microphone")
-        try:
-            device, device_name = resolve_input_device(settings.voice.mic_device or None)
-        except AudioError as exc:
-            raise VisionError(str(exc), code="auth_mic_unavailable") from exc
         seconds = float(
             duration_s if duration_s is not None else settings.biometrics.voice_duration_s
         )
-        samples = record_clip(seconds, device=device)
-        label = device_name
+        if recorder_installed():
+            # Fake capture: there is no device to look up, and a CI runner has
+            # none to find — asking would make the seam machine-dependent.
+            samples = record_clip(seconds)
+            label = "test recorder"
+        else:
+            try:
+                device, device_name = resolve_input_device(settings.voice.mic_device or None)
+            except AudioError as exc:
+                raise VisionError(str(exc), code="auth_mic_unavailable") from exc
+            samples = record_clip(seconds, device=device)
+            label = device_name
 
     if rms(samples) < settings.voice.vad_threshold:
         raise VisionError(
