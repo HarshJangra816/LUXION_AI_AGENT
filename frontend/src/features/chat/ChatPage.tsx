@@ -83,6 +83,13 @@ function toItems(messages: ChatMessageDto[]): ChatItem[] {
   }))
 }
 
+/**
+ * The four Phase 11c biometric tools. While one of them runs, the core shows
+ * AUTHENTICATING rather than the generic WORKING — the model is checking
+ * *who* is there, which is a different answer than "busy".
+ */
+const BIOMETRIC_TOOLS = new Set(['enroll_voice', 'verify_voice', 'enroll_face', 'verify_face'])
+
 /** Fold one `tool` SSE frame into the item's run list. */
 function applyToolEvent(tools: ToolRunView[] | undefined, event: ChatTool): ToolRunView[] {
   const next = [...(tools ?? [])]
@@ -422,7 +429,14 @@ export function ChatPage({ initialDraft = '' }: { initialDraft?: string }) {
               )
             },
             onTool: (tool) => {
-              if (tool.phase === 'start') setAIState('working')
+              if (tool.phase === 'start') {
+                setAIState(BIOMETRIC_TOOLS.has(tool.name) ? 'authenticating' : 'working')
+              } else if (BIOMETRIC_TOOLS.has(tool.name)) {
+                // Any terminal phase (`ok`/`error`/`denied`/…) ends the check:
+                // hand the core back so the run state isn't stuck on AUTH while
+                // the agent keeps going or the final pulse takes over.
+                setAIState('working')
+              }
               setItems((previous) =>
                 previous.map((item) =>
                   item.key === assistantKey

@@ -12,6 +12,7 @@ import { SettingsPage } from './features/settings/SettingsPage'
 import { ToolsPage } from './features/tools/ToolsPage'
 import { fetchHealth, statusLabel, type BackendState } from './lib/api'
 import { useAIState } from './lib/aiState'
+import { setVoiceCommandFallback } from './lib/voiceOrb'
 
 // three.js is the single biggest dependency — keep it out of the first paint.
 const AI3DCore = lazy(() => import('./components/three/AI3DCore'))
@@ -102,6 +103,25 @@ function Shell() {
     setPendingDraft(text)
     setActiveNav('chat')
   }, [])
+
+  /**
+   * A wake-word command spoken anywhere but Chat. ChatPage owns `command`
+   * frames while it is mounted, so this fallback stays quiet there — routing it
+   * as well would run the same utterance twice. Off Chat, the honest thing is
+   * to hand the transcript to the composer rather than drop it on the floor.
+   */
+  const activeNavRef = useRef(activeNav)
+  useEffect(() => {
+    activeNavRef.current = activeNav
+  }, [activeNav])
+
+  useEffect(() => {
+    setVoiceCommandFallback((text) => {
+      if (activeNavRef.current === 'chat') return
+      askLuxion(text)
+    })
+    return () => setVoiceCommandFallback(null)
+  }, [askLuxion])
 
   const meta = PAGE_META[activeNav] ?? PAGE_META.dashboard
 

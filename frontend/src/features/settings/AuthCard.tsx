@@ -8,6 +8,7 @@ import {
   TrashIcon,
 } from '../../components/icons'
 import { SettingsCard } from '../../components/SettingsCard'
+import { useAIState } from '../../lib/aiState'
 import { ApiError } from '../../lib/api'
 import {
   deleteAuthProfile,
@@ -80,6 +81,8 @@ export function AuthCard() {
   const [working, setWorking] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<string | null>(null)
   const [names, setNames] = useState<Record<Modality, string>>({ voice: '', face: '' })
+  /** Drives the core's AUTHENTICATING state while a capture runs (PRD §30). */
+  const { setState: setAIState, pulse } = useAIState()
 
   const apply = (data: AuthConfigBundle) => {
     setBundle(data)
@@ -188,6 +191,9 @@ export function AuthCard() {
     setWorking(label)
     setError(null)
     setOutcome(null)
+    // The core watches the whole capture, not just the round trip: enrolment
+    // and verification both go quiet while the model reads the sample.
+    setAIState('authenticating')
     try {
       if (isEnroll) {
         const result = await enrollAuth({ modality, name: clean })
@@ -197,8 +203,10 @@ export function AuthCard() {
         setOutcome(result.message)
       }
       await refreshProfiles()
+      pulse('success', 1400)
     } catch (err) {
       setError(messageOf(err))
+      pulse('error', 1700)
     } finally {
       setWorking(null)
     }

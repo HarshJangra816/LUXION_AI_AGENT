@@ -10,6 +10,10 @@ const TONE: Record<AIState, string> = {
   success: 'border-status-ok/50 text-status-ok',
   warning: 'border-warning/50 text-warning',
   error: 'border-danger/60 text-danger',
+  // Violet = the same identity colour the auth tools report back in.
+  authenticating: 'border-primary/55 text-primary',
+  // Asleep is not a fault: it keeps a plain muted chip, dimmed like the core.
+  sleeping: 'border-white/10 text-muted/70',
 }
 
 const DOT: Record<AIState, string> = {
@@ -22,6 +26,8 @@ const DOT: Record<AIState, string> = {
   success: 'bg-status-ok',
   warning: 'bg-warning animate-pulse',
   error: 'bg-danger animate-pulse',
+  authenticating: 'bg-primary animate-pulse',
+  sleeping: 'bg-muted/50',
 }
 
 /** Compact state chip — sidebar footer and chat header. */

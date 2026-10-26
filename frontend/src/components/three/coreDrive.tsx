@@ -36,6 +36,10 @@ const STATE_COLOR: Partial<Record<AIState, string>> = {
   success: '#34d399',
   warning: '#fbbf24',
   error: '#fb7185',
+  // Violet reads as "checking you" — deliberate, not a success or a fault.
+  authenticating: '#a78bfa',
+  // Dimmed slate: still lit, just powered down, so it never looks dead.
+  sleeping: '#64748b',
 }
 
 /** Everything else follows the accent chosen in Settings → Appearance. */

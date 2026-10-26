@@ -13,13 +13,16 @@ import App from './App.tsx'
 import { AppearanceProvider } from './lib/appearance'
 import { AIStateProvider } from './lib/aiState'
 import { GraphicsProvider } from './lib/graphics'
+import { VoiceOrbProvider } from './lib/voiceOrb'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <GraphicsProvider>
       <AppearanceProvider>
         <AIStateProvider>
-          <App />
+          <VoiceOrbProvider>
+            <App />
+          </VoiceOrbProvider>
         </AIStateProvider>
       </AppearanceProvider>
     </GraphicsProvider>

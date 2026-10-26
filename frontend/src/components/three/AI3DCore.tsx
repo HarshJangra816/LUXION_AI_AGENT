@@ -4,6 +4,7 @@ import * as THREE from 'three'
 
 import { useAIState } from '../../lib/aiState'
 import { useGraphics } from '../../lib/graphics'
+import { useVoiceOrb } from '../../lib/voiceOrb'
 import { CoreController, CoreDriveProvider, useDrive } from './coreDrive'
 import { CoreCore } from './CoreCore'
 import { CoreField } from './CoreField'
@@ -67,8 +68,27 @@ function Scene({ orbit }: { orbit: boolean }) {
  * Layer order — core → transparent sphere → wireframe → mechanical shell →
  * orbital rings → particles → outer energy field.
  */
-export function AI3DCore({ showHud = false }: { showHud?: boolean }) {  const { profile, reducedMotion, brightness } = useGraphics()
+export function AI3DCore({ showHud = false }: { showHud?: boolean }) {
+  const { profile, reducedMotion, brightness } = useGraphics()
   const { fireClickPulse, state } = useAIState()
+  const { listening, busy, notice, toggleListening } = useVoiceOrb()
+
+  /**
+   * Click = push the mic open or shut (PRD §29 "voice activation"). The pulse
+   * still fires so the press is acknowledged even when the capability gate
+   * refuses — and when it does refuse, `notice` carries the OS's reason onto
+   * the button so the refusal is readable rather than a silent dead click.
+   */
+  const handleClick = () => {
+    fireClickPulse()
+    if (!busy) void toggleListening()
+  }
+
+  const label = busy
+    ? 'Opening the microphone'
+    : listening
+      ? 'Stop listening on the Luxion core'
+      : 'Start listening on the Luxion core'
 
   return (
     <CoreDriveProvider>
@@ -98,9 +118,14 @@ export function AI3DCore({ showHud = false }: { showHud?: boolean }) {  const { 
               the content that scrolls below it. */}
           <button
             type="button"
-            onClick={fireClickPulse}
-            aria-label="Pulse the Luxion core"
-            className="pointer-events-auto absolute top-[40%] left-[53.7%] size-[clamp(130px,17vw,210px)] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border border-transparent transition duration-300 hover:border-tint/35 hover:bg-tint/5 focus-visible:border-tint/70 focus-visible:outline-none"
+            onClick={handleClick}
+            aria-label={label}
+            title={notice ?? undefined}
+            className={`pointer-events-auto absolute top-[40%] left-[53.7%] size-[clamp(130px,17vw,210px)] -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full border transition duration-300 focus-visible:outline-none ${
+              listening
+                ? 'border-tint/55 hover:border-tint/70 focus-visible:border-tint'
+                : 'border-transparent hover:border-tint/35 focus-visible:border-tint/70'
+            }`}
             style={{
               background:
                 state === 'error'

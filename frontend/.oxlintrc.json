@@ -17,6 +17,7 @@
         "src/lib/aiState.tsx",
         "src/lib/graphics.tsx",
         "src/lib/appearance.tsx",
+        "src/lib/voiceOrb.tsx",
         "src/components/three/coreDrive.tsx"
       ],
       "rules": {
