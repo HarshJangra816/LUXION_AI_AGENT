@@ -7,9 +7,12 @@ This guide covers how to set the project up, the conventions the codebase
 follows, how to add a tool (the most common contribution), and what we expect
 from a pull request.
 
-**Current state:** Phases 0–11 shipped — **70 built-in tools**, **836 tests**,
-memory + RAG, browser/desktop/coding/web agents, email + WhatsApp + toast
-notifications, and vision (image analysis, camera, OCR, voice + face auth).
+**Current state:** Phases 0–11 shipped and **Phase 12a** (3D orb interaction)
+in — **70 built-in tools**, **836 tests**, memory + RAG, browser/desktop/coding
+/web agents, email + WhatsApp + toast notifications, vision (image analysis,
+camera, OCR, voice + face auth), and a voice-reactive 3D core with all eleven
+status states. **Phase 12b** (Tauri floating window + tray) and Phase 13
+(advanced agent) are open.
 
 - Product requirements (source of truth): [`prd.md`](prd.md)
 - Install & usage guide: [`SETUP.md`](SETUP.md)
@@ -255,10 +258,17 @@ plugins and builtins stay interchangeable.
   transitions, visible focus rings, `prefers-reduced-motion` respected,
   **no emoji as icons** (use the SVG components in `src/components/icons.tsx`),
   and text contrast ≥ 4.5:1.
-- **The 3D core is frozen.** Do not modify `CoreCore`, `CoreShell`,
+- **The 3D core visuals are frozen.** Do not modify `CoreCore`, `CoreShell`,
   `CoreWireframe`, `CoreRings`, `CoreParticles` or `CoreField` without asking
   first — the visuals are approved as-is. Per-frame values belong in the
-  mutable `coreDrive` state, not in React state.
+  mutable `coreDrive` state, not in React state. (Phase 12a changed only the
+  *click handler* and HUD text in `AI3DCore.tsx`, which is allowed.)
+- **Core state has one owner: `src/lib/aiState.tsx`.** All eleven PRD §30
+  states live in the `AI_STATES` const and `AIState` derives from it, so adding
+  a state without a label/tuning/colour fails to compile. Don't set core state
+  from a new place without reading `voiceOwns()` first — it decides whether the
+  voice stream may interrupt what you're doing. `src/lib/voiceOrb.tsx` owns the
+  global `/voice/events` subscription and the click-to-listen toggle.
 - three.js stays **code-split** behind
   `lazy(() => import('./components/three/AI3DCore'))`.
 

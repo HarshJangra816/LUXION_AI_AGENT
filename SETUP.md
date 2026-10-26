@@ -341,6 +341,36 @@ Four collapsible cards:
 
 Every card remembers whether you left it open or closed, in your browser.
 
+### The 3D core (what it is telling you)
+
+The orb on the Dashboard is a live read-out, not a decoration. It shows all
+eleven status states from the spec: **STANDBY, LISTENING, THINKING,
+PROCESSING, WORKING, SPEAKING, SUCCESS, ATTENTION, FAULT, AUTHENTICATING,
+SLEEPING** — the same label appears in the HUD's MODE chip and in the sidebar
+footer.
+
+Two of them look after themselves:
+
+- **SLEEPING** — after 3 minutes with nothing happening the core powers down.
+  Move the mouse or press any key (or click the core) and it wakes back to
+  STANDBY.
+- **AUTHENTICATING** — appears while a voice or face enrolment/verification is
+  actually reading your sample, whether you triggered it from Settings → Auth
+  or by asking the agent to verify you in chat.
+
+**Clicking the core opens and closes the microphone** (PRD "voice activation").
+The ring brightens while the wake-word session is live, so you can see at a
+glance whether Luxion is listening. If the click does nothing visible, the OS
+has withheld the microphone — hover the core and the reason appears as a
+tooltip, and the same reason is spelled out in Settings → Voice. Commands you
+speak while on another page are carried to the Chat composer instead of being
+dropped.
+
+Every color here is themed: the accent you pick in Settings → Appearance moves
+the core, except SUCCESS (green), ATTENTION (amber), FAULT (red) and
+AUTHENTICATING (violet), which keep their semantic colors so a fault never
+looks like a success in a different theme.
+
 ---
 
 ## 7. Permissions model (how decisions are made)
@@ -565,7 +595,8 @@ tool results on cp1252.)
 
 ---
 
-Happy agenting. Phases 0–11 are shipped and tested, and **Phase 12** 3D interactive
-orb which different status are under work.
-Next up: Phase 13 (advanced agent). See the roadmap 
-in [prd.md](prd.md) and the live status in [memory.md](memory.md).
+Happy agenting. Phases 0–11 are shipped and tested, and **Phase 12a** (the 3D
+interactive orb — all eleven status states, voice-reactive, click to listen)
+is in; **Phase 12b** (Tauri floating window + system tray) is next, then
+Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md) and the live
+status in [memory.md](memory.md).

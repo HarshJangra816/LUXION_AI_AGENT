@@ -10,16 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`), **11c ✅** (2026-10-23, committed `39736a7`) |
-| **Next phase** | **Phase 12 — 3D Orb interaction** (core in place — Phase 12 = interaction/behaviour per the PRD), then **Phase 13 — Advanced Agent**. Phase 11 is fully closed (11a/11b/11c). Near-term follow-ups: **tune the voice threshold with a genuine recording** (synthetic sine voices give DTW no real vocal tract, so `voice_threshold=0.55` is provisional), eyeball the Integrations/Vision/Auth cards in the browser, live-verify a real SMTP/IMAP probe and the WhatsApp QR login + toast, and **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model) |
-| **Last updated** | 2026-10-23 (Phase 11c — voice + face second-factor auth: `luxion/vision/auth.py`, `biometrics` capability, `enroll_*`/`verify_*` tools, `/api/auth`, AuthCard) |
-| **Backend tests** | **835 passing**, 1 skipped (836 total), `ruff check` + `ruff format --check` clean (219 files) — +43 from Phase 11c, +48 from 11b, +32 from 11a. (The 11c commit message said 880; the true count is 836 — collect-only verified 2026-10-23.) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/auth.ts` + `AuthCard.tsx` added this session |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`), **11c ✅** (2026-10-23, committed `39736a7`); **Phase 12 — 3D Orb interaction: 12a ✅** (2026-10-26, committed `0e1d00c`) |
+| **Next phase** | **Phase 12b — Tauri floating window + system tray** (the remaining Phase 12 slice: `frontend/src-tauri/` is untouched so far), then **Phase 13 — Advanced Agent**. Phase 11 is fully closed (11a/11b/11c); Phase 12 is half-closed (12a done, 12b pending). Near-term follow-ups: **tune the voice threshold with a genuine recording** (synthetic sine voices give DTW no real vocal tract, so `voice_threshold=0.55` is provisional), eyeball the Integrations/Vision/Auth cards in the browser, live-verify a real SMTP/IMAP probe and the WhatsApp QR login + toast, **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model), and **eyeball the 12a orb states in a browser** (sleep/wake, the AUTHENTICATING pulse and the click-to-listen toggle are verified by `tsc`/build/lint only) |
+| **Last updated** | 2026-10-26 (Phase 12a — all 11 PRD §30 orb states + global voice→orb bridge: `lib/aiState.tsx` gains `authenticating`/`sleeping`/`voiceOwns`, new `lib/voiceOrb.tsx`, core click starts/stops the mic, biometrics drive AUTHENTICATING) |
+| **Backend tests** | **835 passing**, 1 skipped (836 total), `ruff check` + `ruff format --check` clean (219 files) — unchanged from Phase 11c (12a is frontend-only). +43 from Phase 11c, +48 from 11b, +32 from 11a. (The 11c commit message said 880; the true count is 836 — collect-only verified 2026-10-23.) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/voiceOrb.tsx` added this session (joined the `only-export-components` override list in `.oxlintrc.json`, same as `aiState.tsx`) |
 | **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch, **Phase 11c code pushed as `39736a7`** (rebased onto `origin/main` 2026-10-23; origin meanwhile gained the TTS `wave` fix `f2c1b2c` (#1) and the CI workflow `2c72913` (#2)). Docs commit follows this one. Earlier: Phase 11b as `05c2075` + docs `76741c1`, contributor docs `0939221` + `039b2e1`, Phase 11a `ec89263` + docs `a4f5c81`, docs refresh `12aca78`, Phase 10 `87c65b1`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 9 `ca27319`, Phase 7 `e528940`, Phase 8 `70f02ff`. README has a CI badge; GitHub Actions (`ci.yml`) now enforces the quality gates on push/PR |
+| **Git** | main branch, **Phase 12a code pushed as `0e1d00c`** (2026-10-26). Docs commit follows this one. Earlier: Phase 11c as `39736a7` + docs `906d34a` + CI fix `ef44a48`, then the user's three docs commits (`708b55e`, `cc8da64`, `927d658`) marking Phase 12 🚧; Phase 11b as `05c2075` + docs `76741c1`, contributor docs `0939221` + `039b2e1`, Phase 11a `ec89263` + docs `a4f5c81`, docs refresh `12aca78`, Phase 10 `87c65b1`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 9 `ca27319`, Phase 7 `e528940`, Phase 8 `70f02ff`. README has a CI badge; GitHub Actions (`ci.yml`) now enforces the quality gates on push/PR |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
-| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). **Phase 11c added zero** (MFCC+DTW over the already-installed numpy; YuNet/SFace ride the same `opencv-contrib-python` wheel, and `resemblyzer` was rejected for pinning `librosa<0.11`). Keep new phases on this diet. |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). **Phase 11c added zero** (MFCC+DTW over the already-installed numpy; YuNet/SFace ride the same `opencv-contrib-python` wheel, and `resemblyzer` was rejected for pinning `librosa<0.11`). **Phase 12a added zero** (frontend-only: `voiceOrb.tsx` reuses the existing `lib/voice.ts` SSE client — no new npm package, and three.js/React were already in). Keep new phases on this diet. |
 
 ---
 
@@ -692,7 +692,16 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   `npx tauri icon public/logo.png`.
 - [ ] `LUXION_LOGGING__JSON` was renamed to `LUXION_LOGGING__JSON_LOGS` —
   update any external docs/scripts using the old name.
-- [ ] Tauri tray / system tray integration not started (Phase 12 per PRD).
+- [ ] Tauri tray / system tray integration not started (**Phase 12b** — 12a
+  closed the orb-states slice on 2026-10-26; `frontend/src-tauri/` is still
+  untouched).
+- [ ] **Eyeball the Phase 12a orb states in a browser.** `sleeping` (3 min of
+  quiet `idle`, pointer/key wakes it), `authenticating` (AuthCard capture or a
+  biometric tool run) and the click-to-listen toggle are verified by
+  `tsc`/`vite build`/`oxlint` only — no frontend unit-test harness exists.
+  Manual check: let the core sit idle on the Dashboard until SLEEPING, then
+  move the mouse; click the core twice to open/close the mic and confirm the
+  capability refusal text lands on the button's `title`.
 - [ ] Starlette TestClient deprecation warning (`httpx` → `httpx2`) — ignore for now.
 - [ ] **Restart the backend** (`.\scripts\dev.ps1`, no `--reload`) so the new
   `llm.think=false` → `{"think": false}` payload reaches Ollama; then eyeball a
@@ -817,11 +826,84 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ✅ **done (2026-10-20, committed `87c65b1`)** — `luxion/email/` (smtplib send + imaplib read + MIME + drafts), `luxion/whatsapp/` (persistent Playwright Web session + DOM ops + `whatsapp://` protocol), `luxion/notify/` (PowerShell WinRT toast) + 8 tools (`email_draft`, `email_send`, `email_send_draft`, `email_read`, `whatsapp_send`, `whatsapp_read`, `whatsapp_open`, `notify`) → registry **62**, `EmailConfig`/`WhatsAppConfig`/`NotificationConfig` + `email.json`/`whatsapp.json`/`notify.json` overlays + `/api/email` (+ probe + drafts) + `/api/whatsapp` (+ session/QR/close) + `/api/notify` (+ test toast), Settings → Integrations gains **Email · WhatsApp · Notifications** cards, +91 tests, zero new deps; SMTP password env-only everywhere |
 | 11 | Vision + Hardware | ✅ **done (2026-10-23)** — **11a (2026-10-21, `ec89263`)** vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools → registry **64**, zero new deps, +32 tests. **11b (2026-10-21, `05c2075`)** — `camera.py` (OpenCV webcam) + `ocr.py` (RapidOCR / vision), `capture_camera` + `ocr_image` → registry **66**, `VisionConfig` camera + OCR knobs, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard panels, 2 new FOSS deps, +48 tests, **live-verified on the HP True Vision webcam**. **11c (2026-10-23, `39736a7`)** — `vision/auth.py` (MFCC+DTW voiceprint, YuNet+SFace faceprint), `biometrics` capability (default OFF, 9 → 10), `enroll_voice`/`verify_voice`/`enroll_face`/`verify_face` → registry **70**, `biometrics.json` overlay + `/api/auth` + AuthCard, zero new deps, +43 tests (836 total) |
-| 12 | 3D Orb | ⬜ (core already in place — Phase 12 = interaction/behaviour) |
+| 12 | 3D Orb | 🚧 **12a done (2026-10-26, `0e1d00c`)** — all 11 PRD §30 states live + global voice→orb bridge + click-to-listen + biometrics drive AUTHENTICATING; **12b pending** (Tauri floating window + tray, `src-tauri/` untouched) |
 | 13 | Advanced Agent | ⬜ |
 
 
 ## Latest Update
+
+### Phase 12a — Orb states + voice wiring (✅ done 2026-10-26, committed `0e1d00c`)
+
+**12a (this session) — PRD §29/§30. The core now has all eleven states the PRD
+lists, and it reacts to the real voice stream and the real biometrics flow
+rather than being a decorative loop. Frontend-only: zero new deps (npm or
+Python), backend untouched, suite still 835 passing / 1 skipped.**
+
+- **`lib/aiState.tsx` (rewritten around one source of truth).** `AI_STATES` is
+  now an `as const` tuple that `AIState` derives *from*, so
+  `AI_STATE_LABEL`/`AI_STATE_TUNING`/`AIStatus`'s `TONE`+`DOT` — all
+  `Record<AIState, …>` — fail to compile the moment a state is added without
+  its label, tuning and colours. The two missing §30 states landed:
+  **`authenticating`** (violet `#a78bfa` / `--color-primary`, tuning `speed
+  0.26, energy 0.55` — deliberate, not frantic) and **`sleeping`** (dimmed
+  slate `#64748b`, `speed 0.05` — near-still so it reads as asleep, not dead).
+- **Sleep/wake is owned by the state, not by a caller.** `SLEEP_AFTER_MS =
+  180_000`: three minutes of a quiet `idle` powers the core down into
+  `sleeping`; the first `pointerdown`/`keydown` (or any `setState`/`pulse`/
+  click) brings it back and re-arms the countdown. `setState`/`pulse`/`armSleep`
+  all funnel through one `commit()` that writes a mirrored `stateRef`, so the
+  ref can never drift from the rendered state — that is what lets a listener
+  registered once read a fresh value later.
+- **`voiceOwns(current, next)` — the arbitration rule.** Two clauses, in
+  order: (1) `working`/`processing`/`authenticating`/`warning` are *locked* —
+  owned by Chat and the biometrics flow, so a voice frame can never flash
+  LISTENING over a running tool call or a pending confirm; (2) voice may only
+  claim what it can own — returning to `idle` (or reporting its own `error`)
+  is allowed purely from a state voice itself put the core in, which is what
+  stops a stray `idle` frame from cancelling Chat's `success`/`error` pulse
+  mid-burst. Entering `listening`/`thinking`/`speaking` from a *finished* task
+  is fine: the user genuinely is speaking over the result.
+- **New `lib/voiceOrb.tsx` — `VoiceOrbProvider`, mounted in `main.tsx` inside
+  `AIStateProvider`.** Subscribes to `/voice/events` **globally**, so the orb
+  reacts on every page and not only while Chat happens to be mounted (the
+  backend fans one event out to every subscriber, so this is a third
+  subscriber alongside ChatPage and VoiceCard — safe). It maps `state` frames
+  `listening→listening`, `transcribing→thinking`, `speaking→speaking`,
+  `idle→idle`, each guarded by `voiceOwns`; a real STT/TTS `error` frame pulses
+  FAULT for 1.6 s and returns to LISTENING if the mic is still open.
+- **`toggleListening()` reads before it writes.** It calls `GET /voice` first,
+  then `POST /voice/listen` with the *inverted* value — because Settings →
+  Voice and the composer's toggle can both change the session behind the
+  bridge's back, and a stale guess would press the wrong button. A refusal
+  (voice off, microphone capability denied by the OS) is stored as `notice`
+  and pulsed as FAULT — never a silent dead click.
+- **Core click starts/stops the mic (`AI3DCore.tsx`).** The click still fires
+  `fireClickPulse()` so the press is acknowledged even when the capability
+  gate refuses, and now also runs `toggleListening()` (skipped while a toggle
+  is already in flight). The ring gains a `border-tint/55` listening state,
+  the `aria-label` flips Start/Stop, and `title={notice}` carries the OS's
+  refusal reason.
+- **Spoken commands are no longer dropped off the Chat page.** `App.tsx`
+  registers `setVoiceCommandFallback`, which routes the transcript to
+  `askLuxion(text)` (fill the composer + navigate) whenever
+  `activeNavRef.current !== 'chat'`; while Chat *is* mounted, ChatPage keeps
+  owning `command` frames so the same utterance is never run twice.
+- **Biometrics drive `authenticating`.** `AuthCard.capture()` sets it before
+  enroll/verify and pulses SUCCESS/FAULT afterwards; in Chat, the four
+  `BIOMETRIC_TOOLS` (`enroll_voice`/`verify_voice`/`enroll_face`/`verify_face`)
+  set `authenticating` on `phase === 'start'` and hand back to `working` on any
+  terminal phase (`ok`/`error`/`denied`/`timeout`/`invalid_args` — note there
+  is no `success` phase), so the run state is never stuck on AUTH.
+- **Gates** — `tsc -b` + `vite build` exit 0, `oxlint` clean (219 files backend
+  ruff still clean, pytest 835 passed / 1 skipped). `voiceOrb.tsx` joined the
+  `only-export-components` override list in `.oxlintrc.json`, alongside
+  `aiState.tsx`/`graphics.tsx`/`appearance.tsx`/`coreDrive.tsx` — the existing
+  precedent for lib files that export a provider plus hooks/constants.
+- **Not in 12a** — Phase 12b (Tauri floating window + system tray) is
+  untouched; `frontend/src-tauri/` has no changes. The states are verified by
+  the compiler and the suite, **not** by a browser: sleep/wake, the
+  AUTHENTICATING pulse and the click-to-listen toggle still want a manual
+  eyeball (logged as an open item).
 
 ### Phase 11c — Voice + Face Authentication (✅ done 2026-10-23, committed `39736a7`)
 
