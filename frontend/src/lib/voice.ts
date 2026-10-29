@@ -153,6 +153,20 @@ export function setVoiceListening(on: boolean): Promise<VoiceStatus> {
   return request<VoiceStatus>('/voice/listen', jsonBody({ on }))
 }
 
+/**
+ * Flip the wake-word session: read the live status, then open it if it is
+ * closed and close it if it is open. Answers with the authoritative status.
+ *
+ * It reads before it writes because Settings → Voice, the composer's toggle and
+ * the floating orb (Phase 12b) can each change the session behind a caller's
+ * back, and a stale guess would press the wrong button. This is the single
+ * implementation every click-to-listen affordance shares.
+ */
+export async function flipVoiceListening(): Promise<VoiceStatus> {
+  const current = await getVoiceStatus()
+  return setVoiceListening(!current.listening)
+}
+
 /** Push-to-talk: one utterance → its transcript (`""` when nothing was said). */
 export function recognize(timeoutS?: number): Promise<{ text: string }> {
   const payload = timeoutS === undefined ? {} : { timeout_s: timeoutS }

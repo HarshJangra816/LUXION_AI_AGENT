@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vite'
@@ -20,5 +21,12 @@ export default defineConfig({
   build: {
     target: 'esnext',
     sourcemap: true,
+    // Two entries: the main app, and the floating orb window (PRD §29).
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        orb: fileURLToPath(new URL('./orb.html', import.meta.url)),
+      },
+    },
   },
 })

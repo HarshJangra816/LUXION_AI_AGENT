@@ -1,0 +1,18 @@
+/**
+ * Floating orb window styling (imported by orb.tsx, after index.css).
+ *
+ * The orb window is transparent (PRD §29) so only the 3D core shows; index.css
+ * paints the main app's deep-blue body for `body`, so undo that here. Tailwind
+ * still needs index.css for its `@theme` tokens — this file just overrides the
+ * few rules that would otherwise leak the app chrome into the orb.
+ */
+
+html,
+body {
+  background: transparent;
+  overflow: hidden;
+}
+
+#orb-root {
+  height: 100%;
+}

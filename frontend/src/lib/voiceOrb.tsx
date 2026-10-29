@@ -34,8 +34,8 @@ import {
 
 import { useAIState, voiceOwns, type AIState } from './aiState'
 import {
+  flipVoiceListening,
   getVoiceStatus,
-  setVoiceListening,
   useVoiceEvents,
   type VoiceEvent,
   type VoiceState,
@@ -136,11 +136,10 @@ export function VoiceOrbProvider({ children }: { children: ReactNode }) {
     if (busy) return
     setBusy(true)
     try {
-      // Read first: Settings → Voice and the composer's toggle can both change
-      // the session behind our back, and a stale guess would press the wrong
-      // button. `setVoiceListening` answers with the authoritative status.
-      const current = await getVoiceStatus()
-      const status = await setVoiceListening(!current.listening)
+      // Read first, then flip — see `flipVoiceListening`. Settings → Voice and
+      // the composer's toggle can both change the session behind our back, and
+      // a stale guess would press the wrong button.
+      const status = await flipVoiceListening()
       setListening(status.listening)
       setNotice(null)
     } catch (caught) {

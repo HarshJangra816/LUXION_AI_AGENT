@@ -14,6 +14,11 @@
  * - `listening` / `thinking` / `speaking` — driven by the real `/voice/events`
  *   stream through {@link voiceOwns}, which refuses to let audio interrupt a
  *   running tool call or a pending confirm.
+ *
+ * There are two providers over one context: {@link AIStateProvider} owns and
+ * *drives* the state (the main window), publishing every change to the floating
+ * orb window; {@link AIStateMirrorProvider} only *displays* what the owner
+ * publishes (the orb window, Phase 12b).
  */
 
 import {
@@ -26,6 +31,8 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+
+import { onAIState, publishAIState } from './orbBridge'
 
 /**
  * PRD §30's eleven states, in the order the PRD lists them. This tuple is the
@@ -200,7 +207,45 @@ export function AIStateProvider({ children }: { children: ReactNode }) {
   // The pulse timeout outlives the activity listener above, so clear it too.
   useEffect(() => () => window.clearTimeout(timerRef.current), [])
 
+  /**
+   * Mirror this window's state into the floating orb window (PRD §29). Every
+   * change flows out here and the orb's `AIStateMirrorProvider` displays it.
+   * A no-op in a plain browser, where the orb window does not exist.
+   */
+  useEffect(() => publishAIState(state), [state])
+
   const value = useMemo(
+    () => ({ state, setState, pulse, clickNonce, fireClickPulse }),
+    [state, setState, pulse, clickNonce, fireClickPulse],
+  )
+
+  return <AIStateContext.Provider value={value}>{children}</AIStateContext.Provider>
+}
+
+/**
+ * Read-only view of the state machine, for the floating orb window (PRD §29).
+ *
+ * The main window's {@link AIStateProvider} is the single owner; this provider
+ * only *displays* what it publishes over `onAIState`. `setState`/`pulse` are
+ * no-ops — the orb never drives state — and `fireClickPulse` bumps the local
+ * click nonce so a press still gives instant visual feedback before the real
+ * LISTENING frame arrives back from the main window.
+ */
+export function AIStateMirrorProvider({ children }: { children: ReactNode }) {
+  const [state, setStateRaw] = useState<AIState>('idle')
+  const [clickNonce, setClickNonce] = useState(0)
+
+  // Follow the owner; unlisten on unmount.
+  useEffect(() => onAIState(setStateRaw), [])
+
+  const setState = useCallback((_next: AIState) => {}, [])
+  const pulse = useCallback(
+    (_kind: 'success' | 'warning' | 'error' | 'working', _ms?: number, _after?: AIState) => {},
+    [],
+  )
+  const fireClickPulse = useCallback(() => setClickNonce((value) => value + 1), [])
+
+  const value = useMemo<AIStateValue>(
     () => ({ state, setState, pulse, clickNonce, fireClickPulse }),
     [state, setState, pulse, clickNonce, fireClickPulse],
   )
