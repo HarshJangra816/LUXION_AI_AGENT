@@ -240,7 +240,7 @@ machine). See [memory.md](memory.md) for the full phase log and
 |--|-------|--------|
 | ✅ | 0–10 | Architecture → communication (see above) |
 | ✅ | 11 | Vision + Hardware — **complete** (vision core, camera + OCR, voice/face auth) |
-| 🚧 | 12 | 3D Orb — **12a done** (all 11 status states, voice-reactive, click-to-listen); 12b pending (Tauri floating window + tray) |
+| ✅ | 12 | 3D Orb — **complete** (12a: all 11 status states, voice-reactive, click-to-listen; 12b: floating always-on-top orb window + system tray) |
 | ⬜ | 13 | Advanced Agent |
 
 ## Contributing

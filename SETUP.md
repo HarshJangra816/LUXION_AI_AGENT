@@ -371,6 +371,35 @@ the core, except SUCCESS (green), ATTENTION (amber), FAULT (red) and
 AUTHENTICATING (violet), which keep their semantic colors so a fault never
 looks like a success in a different theme.
 
+### The floating orb + system tray (desktop app)
+
+When you run the **desktop app** (`npm run tauri dev`, or the installed build),
+the core is also a small always-on-top window that floats over everything — the
+"persistent floating orb" from the spec. It shows the *same* eleven states as
+the Dashboard core, in real time, wherever you put it.
+
+- **Move it** by dragging its transparent edge (the glowing core itself is not
+  the handle — that would make it impossible to click).
+- **Click the core** to open or close the microphone, exactly like the
+  Dashboard core. The ring brightens while it is listening.
+- **Resize it** from any edge; the orb scales to fit.
+- It **remembers where you left it** (and how big it was) across restarts. If
+  you unplug the monitor it was sitting on, it re-centres on the main display
+  rather than vanishing off-screen.
+- **Closing it just hides it** — it comes back from the tray.
+
+The **system tray** icon (in the taskbar's overflow area) has a menu:
+
+| Item | What it does |
+|------|--------------|
+| **Show Orb** | Bring the floating orb back |
+| **Hide Orb** | Hide it |
+| **Open Luxion** | Show the main app window |
+| **Quit** | Actually exit the app (closing windows only hides them) |
+
+The orb reads the accent color you chose in Settings → Appearance, so it always
+matches the app. Note: a color change applies the next time the orb starts.
+
 ---
 
 ## 7. Permissions model (how decisions are made)
@@ -595,8 +624,8 @@ tool results on cp1252.)
 
 ---
 
-Happy agenting. Phases 0–11 are shipped and tested, and **Phase 12a** (the 3D
-interactive orb — all eleven status states, voice-reactive, click to listen)
-is in; **Phase 12b** (Tauri floating window + system tray) is next, then
-Phase 13 (advanced agent). See the roadmap in [prd.md](prd.md) and the live
-status in [memory.md](memory.md).
+Happy agenting. Phases 0–12 are shipped and tested — including the full 3D orb
+(12a: all eleven status states, voice-reactive, click to listen; 12b: the
+floating always-on-top orb window plus the system tray). Next up: Phase 13
+(advanced agent). See the roadmap in [prd.md](prd.md) and the live status in
+[memory.md](memory.md).

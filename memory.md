@@ -10,16 +10,16 @@
 
 | Field | Value |
 |-------|-------|
-| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`), **11c ✅** (2026-10-23, committed `39736a7`); **Phase 12 — 3D Orb interaction: 12a ✅** (2026-10-26, committed `0e1d00c`) |
-| **Next phase** | **Phase 12b — Tauri floating window + system tray** (the remaining Phase 12 slice: `frontend/src-tauri/` is untouched so far), then **Phase 13 — Advanced Agent**. Phase 11 is fully closed (11a/11b/11c); Phase 12 is half-closed (12a done, 12b pending). Near-term follow-ups: **tune the voice threshold with a genuine recording** (synthetic sine voices give DTW no real vocal tract, so `voice_threshold=0.55` is provisional), eyeball the Integrations/Vision/Auth cards in the browser, live-verify a real SMTP/IMAP probe and the WhatsApp QR login + toast, **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model), and **eyeball the 12a orb states in a browser** (sleep/wake, the AUTHENTICATING pulse and the click-to-listen toggle are verified by `tsc`/build/lint only) |
-| **Last updated** | 2026-10-26 (Phase 12a — all 11 PRD §30 orb states + global voice→orb bridge: `lib/aiState.tsx` gains `authenticating`/`sleeping`/`voiceOwns`, new `lib/voiceOrb.tsx`, core click starts/stops the mic, biometrics drive AUTHENTICATING) |
-| **Backend tests** | **835 passing**, 1 skipped (836 total), `ruff check` + `ruff format --check` clean (219 files) — unchanged from Phase 11c (12a is frontend-only). +43 from Phase 11c, +48 from 11b, +32 from 11a. (The 11c commit message said 880; the true count is 836 — collect-only verified 2026-10-23.) |
-| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — `lib/voiceOrb.tsx` added this session (joined the `only-export-components` override list in `.oxlintrc.json`, same as `aiState.tsx`) |
-| **Tauri shell** | `cargo check` OK (icons still the old Vite logo) |
-| **Git** | main branch, **Phase 12a code pushed as `0e1d00c`** (2026-10-26). Docs commit follows this one. Earlier: Phase 11c as `39736a7` + docs `906d34a` + CI fix `ef44a48`, then the user's three docs commits (`708b55e`, `cc8da64`, `927d658`) marking Phase 12 🚧; Phase 11b as `05c2075` + docs `76741c1`, contributor docs `0939221` + `039b2e1`, Phase 11a `ec89263` + docs `a4f5c81`, docs refresh `12aca78`, Phase 10 `87c65b1`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 9 `ca27319`, Phase 7 `e528940`, Phase 8 `70f02ff`. README has a CI badge; GitHub Actions (`ci.yml`) now enforces the quality gates on push/PR |
+| **Current phase** | Phase 5 — Memory + RAG: **5a ✅**, **5b ✅**, **5c ✅**, **5d ✅**; **Phase 6 — Browser Agent ✅** (2026-10-11, committed `9c240f9`); **Phase 7 — Computer Automation ✅** (2026-10-15, committed `e528940`); **Phase 8 — Coding Agent ✅** (2026-10-15, committed `70f02ff`); **Phase 9 — Web Intelligence ✅** (2026-10-20, committed `ca27319`); **UI restructure ✅** (2026-10-20, collapsible settings cards + Tools/Integrations nav pages); **Phase 10 — Communication ✅** (2026-10-20, committed `87c65b1`); **Phase 11 — Vision + Hardware: 11a ✅** (2026-10-21, committed `ec89263`), **11b ✅** (2026-10-21, committed `05c2075`), **11c ✅** (2026-10-23, committed `39736a7`); **Phase 12 — 3D Orb: 12a ✅** (2026-10-26, committed `0e1d00c` — states + voice), **12b ✅** (2026-10-29, committed `c571476` — floating orb window + system tray) |
+| **Next phase** | **Phase 13 — Advanced Agent** (planner/observer/critic/recovery, multi-agent — the last open PRD phase). Phases 0–12 are fully closed (12 = 12a + 12b). Near-term follow-ups: **eyeball the 12b desktop shell in a live `tauri dev` run** (transparent always-on-top orb, drag-to-move from the margin, click-to-talk, resize, position persistence across restarts, tray Show/Hide/Open/Quit — verified by `cargo check` + build only, since a windowed/tray GUI can't be exercised headless), **eyeball the 12a orb states in a browser** (sleep/wake, AUTHENTICATING pulse, click-to-listen), **tune the voice threshold with a genuine recording** (synthetic sine voices give DTW no real vocal tract, so `voice_threshold=0.55` is provisional), live-verify a real SMTP/IMAP probe and the WhatsApp QR login + toast, and **live-verify the vision-model paths** (Ollama is not installed on this box — the `capture_camera`/`ocr_image` question paths and `engine=vision` need a running vision model) |
+| **Last updated** | 2026-10-29 (Phase 12b — floating orb window + system tray: `src-tauri/src/lib.rs` creates a transparent always-on-top resizable `orb` webview with throttled position/size persistence + off-screen clamp + hide-on-close, a tray menu, and an `ExitRequested` guard so only Quit exits; frontend adds the `orb.html`/`orb.tsx` entry, `OrbCore.tsx`, `lib/orbBridge.ts`, and `AIStateMirrorProvider`) |
+| **Backend tests** | **835 passing**, 1 skipped (836 total), `ruff check` + `ruff format --check` clean (219 files) — unchanged since Phase 11c (12a and 12b are frontend + Tauri only; backend untouched). +43 from Phase 11c, +48 from 11b, +32 from 11a. (The 11c commit message said 880; the true count is 836 — collect-only verified 2026-10-23.) |
+| **Frontend build** | `tsc -b && vite build` OK (exit 0), `oxlint` clean — multi-entry now: `index.html` (main app) + `orb.html` (floating orb window, `orb.tsx`/`OrbCore.tsx`/`lib/orbBridge.ts` added in 12b; `lib/voiceOrb.tsx` + `lib/orbBridge.ts` are on the `only-export-components` override list in `.oxlintrc.json`) |
+| **Tauri shell** | `cargo check` OK (exit 0) — 12b builds a second transparent always-on-top `orb` webview + a system tray on the `tauri` crate's `tray-icon` feature (zero new crate deps); icons still the old Vite logo |
+| **Git** | main branch, **Phase 12b code pushed as `c571476`** (2026-10-29). Docs commit follows this one. Earlier: Phase 12a as `0e1d00c` + docs `65affa3` (both CI-green, runs #8/#9); Phase 11c as `39736a7` + docs `906d34a` + CI fix `ef44a48`, then the user's three docs commits (`708b55e`, `cc8da64`, `927d658`); Phase 11b as `05c2075` + docs `76741c1`, contributor docs `0939221` + `039b2e1`, Phase 11a `ec89263` + docs `a4f5c81`, docs refresh `12aca78`, Phase 10 `87c65b1`, **UI restructure `3d8f77b` (own commit)**, SETUP.md `fad6cb8`, Phase 9 `ca27319`, Phase 7 `e528940`, Phase 8 `70f02ff`. README has a CI badge; GitHub Actions (`ci.yml`) enforces the quality gates on push/PR |
 | **Default adapter** | **Ollama**, model **pinned to `qwen3.5:2b`** in `database/llm_provider.json` (was auto-detect → `nemomix-local:latest`, since deleted from Ollama); `llm.think=false` |
 | **Permission layers** | 4: OS privacy gates (read-only probe) → app consents → account sources → tool risk engine (Phase 3). Capability check runs **before** the risk engine. Voice re-uses the same gate (`microphone`, `speaker`); desktop input injection uses `input_control` (Phase 7); command execution uses `terminal` (Phase 8, **default OFF**). |
-| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). **Phase 11c added zero** (MFCC+DTW over the already-installed numpy; YuNet/SFace ride the same `opencv-contrib-python` wheel, and `resemblyzer` was rejected for pinning `librosa<0.11`). **Phase 12a added zero** (frontend-only: `voiceOrb.tsx` reuses the existing `lib/voice.ts` SSE client — no new npm package, and three.js/React were already in). Keep new phases on this diet. |
+| **FOSS-first rule** | (user, 2026-10-15) prefer free/open-source like OpenCode: stdlib + FOSS CLIs only — Phase 8 added **zero** new Python deps (stdlib subprocess/re/tomllib + the user's own git/gh), **Phase 9 also added zero** (stdlib `xml.etree`/`zoneinfo`/`csv`/`json` + the existing `httpx`; every web source is keyless), **Phase 10 added zero** (stdlib `smtplib`/`imaplib`/`base64`/`subprocess` + the existing `playwright` + a built-in PowerShell call; WhatsApp/email/notify need no API keys or business onboarding). **Phase 11b added two — both FOSS, both user-approved (2026-10-21):** `opencv-contrib-python` (BSD-3; one wheel buys the webcam, YuNet face detection and SFace recognition for 11c) and `rapidocr-onnxruntime` (Apache-2.0; exact-text OCR over the already-installed onnxruntime, optional — `ocr_engine=vision` degrades to the model without it). **Phase 11c added zero** (MFCC+DTW over the already-installed numpy; YuNet/SFace ride the same `opencv-contrib-python` wheel, and `resemblyzer` was rejected for pinning `librosa<0.11`). **Phase 12a added zero** (frontend-only: `voiceOrb.tsx` reuses the existing `lib/voice.ts` SSE client — no new npm package, and three.js/React were already in). **Phase 12b added zero** (the floating orb reuses the existing `@tauri-apps/api` + three.js/React; the system tray rides the `tauri` crate's built-in `tray-icon` feature, no new crate; no Python touched). Keep new phases on this diet. |
 
 ---
 
@@ -692,9 +692,19 @@ cd frontend; npx tauri dev          # builds Rust + launches window
   `npx tauri icon public/logo.png`.
 - [ ] `LUXION_LOGGING__JSON` was renamed to `LUXION_LOGGING__JSON_LOGS` —
   update any external docs/scripts using the old name.
-- [ ] Tauri tray / system tray integration not started (**Phase 12b** — 12a
-  closed the orb-states slice on 2026-10-26; `frontend/src-tauri/` is still
-  untouched).
+- [x] ~~Tauri tray / system tray integration~~ — **done in Phase 12b**
+  (2026-10-29, `c571476`): tray icon + Show/Hide Orb/Open Luxion/Quit menu,
+  close-to-tray, `ExitRequested` guard so only Quit exits.
+- [ ] **Eyeball the Phase 12b desktop shell in a live `tauri dev` run.** The orb
+  window (transparent, always-on-top, frameless) + tray compile clean
+  (`cargo check`, exit 0) but a windowed/tray GUI can't be exercised headless.
+  Manual check: `npm run tauri dev` — the orb should appear lower-right, be
+  drag-to-move from its transparent margin (not the core), toggle the mic on a
+  core click, resize from the edges with the orb scaling to fit, keep its
+  position/size across a restart (`orb-geometry.json` in the app config dir),
+  survive a monitor unplug by re-centring, and hide/reopen from the tray;
+  closing the main window should park it in the tray, and only tray **Quit**
+  should exit the app.
 - [ ] **Eyeball the Phase 12a orb states in a browser.** `sleeping` (3 min of
   quiet `idle`, pointer/key wakes it), `authenticating` (AuthCard capture or a
   biometric tool run) and the click-to-listen toggle are verified by
@@ -826,11 +836,76 @@ cd frontend; npx tauri dev          # builds Rust + launches window
 | 9 | Web Intelligence | ✅ **done (2026-10-20, committed `ca27319`)** — `luxion/web/` (DDG search, Open-Meteo weather, RSS/HN news, TVMaze movies, Yahoo-only finance, Cloudflare speed, zoneinfo world clock) + 7 tools (`web_search`, `get_weather`, `get_news`, `movie_lookup`, `stock_quote`, `internet_speed`, `world_clock`) → registry **54**, `WebConfig` + `web.json` overlay + `/api/web` (+ `POST /web/probe`) + Settings → Web card, PRD §37 provenance stamps + system-prompt sourcing rules, zero new deps, +61 tests; **7/7 tools live-verified over real HTTP** (speed 403 fixed via `SPEED_HEADERS` + dict-`colo` normalisation) |
 | 10 | Communication | ✅ **done (2026-10-20, committed `87c65b1`)** — `luxion/email/` (smtplib send + imaplib read + MIME + drafts), `luxion/whatsapp/` (persistent Playwright Web session + DOM ops + `whatsapp://` protocol), `luxion/notify/` (PowerShell WinRT toast) + 8 tools (`email_draft`, `email_send`, `email_send_draft`, `email_read`, `whatsapp_send`, `whatsapp_read`, `whatsapp_open`, `notify`) → registry **62**, `EmailConfig`/`WhatsAppConfig`/`NotificationConfig` + `email.json`/`whatsapp.json`/`notify.json` overlays + `/api/email` (+ probe + drafts) + `/api/whatsapp` (+ session/QR/close) + `/api/notify` (+ test toast), Settings → Integrations gains **Email · WhatsApp · Notifications** cards, +91 tests, zero new deps; SMTP password env-only everywhere |
 | 11 | Vision + Hardware | ✅ **done (2026-10-23)** — **11a (2026-10-21, `ec89263`)** vision core: `ImagePayload` on `ChatMessage` (+ Ollama `images[]` / OpenAI `image_url[]` payloads), `luxion/vision/` (`imaging.py` Pillow pipeline + `analyzer.py` provider call), `VisionConfig` + `vision.json` overlay + `/api/vision` (+ probe + analyze) + Settings → Vision card, 2 tools → registry **64**, zero new deps, +32 tests. **11b (2026-10-21, `05c2075`)** — `camera.py` (OpenCV webcam) + `ocr.py` (RapidOCR / vision), `capture_camera` + `ocr_image` → registry **66**, `VisionConfig` camera + OCR knobs, `/vision/cameras` + `/vision/camera` + `/vision/ocr`, VisionCard panels, 2 new FOSS deps, +48 tests, **live-verified on the HP True Vision webcam**. **11c (2026-10-23, `39736a7`)** — `vision/auth.py` (MFCC+DTW voiceprint, YuNet+SFace faceprint), `biometrics` capability (default OFF, 9 → 10), `enroll_voice`/`verify_voice`/`enroll_face`/`verify_face` → registry **70**, `biometrics.json` overlay + `/api/auth` + AuthCard, zero new deps, +43 tests (836 total) |
-| 12 | 3D Orb | 🚧 **12a done (2026-10-26, `0e1d00c`)** — all 11 PRD §30 states live + global voice→orb bridge + click-to-listen + biometrics drive AUTHENTICATING; **12b pending** (Tauri floating window + tray, `src-tauri/` untouched) |
-| 13 | Advanced Agent | ⬜ |
+| 12 | 3D Orb | ✅ **done (2026-10-29)** — **12a (2026-10-26, `0e1d00c`)** all 11 PRD §30 states live + global voice→orb bridge + click-to-listen + biometrics drive AUTHENTICATING; **12b (2026-10-29, `c571476`)** floating transparent always-on-top orb window (draggable/resizable, position persistence, hide-on-close) + system tray (Show/Hide/Open/Quit), state mirrored to the orb over Tauri events. Needs a live `tauri dev` GUI eyeball |
+| 13 | Advanced Agent | ⬜ — **next** (planner/observer/critic/recovery, long-running tasks, multi-agent) |
 
 
 ## Latest Update
+
+### Phase 12b — Floating orb window + system tray (✅ done 2026-10-29, committed `c571476`)
+
+**12b (this session) — PRD §29 "Desktop Orb". The core stops being only an
+in-app backdrop and becomes a real desktop citizen: a persistent, transparent,
+always-on-top floating orb plus a system tray. Frontend + Tauri only, zero new
+deps (npm, Python or Rust crates), backend untouched, suite still 835 passing /
+1 skipped.**
+
+- **Rust shell (`src-tauri/src/lib.rs`, rewritten).** At startup it builds a
+  second webview labelled `orb` (`WebviewUrl::App("orb.html")`) that is
+  transparent, frameless (`decorations(false)` + `transparent(true)` +
+  `shadow(false)`), `always_on_top`, off the taskbar (`skip_taskbar`), and
+  resizable down to 160 px. It shows on launch, lower-right of the primary
+  monitor the first time.
+- **Position + size persistence, hand-rolled (no plugin, zero deps).** Every
+  `Moved`/`Resized` event writes `orb-geometry.json` in the app config dir,
+  throttled to one write per 400 ms (a drag emits an event per pixel) and
+  guarded so a hidden/zero-size window is never persisted as an invisible orb.
+  On the next launch the saved geometry is restored and **clamped back onto a
+  connected monitor** — unplugging the second display can't strand the orb
+  off-screen; it re-centres on the primary instead.
+- **Persistent by design.** The orb (and the main window) hide on close rather
+  than destroy, so the tray can always bring them back. A `RunEvent::ExitRequested
+  { code: None }` guard calls `prevent_exit()`, keeping the app alive in the
+  tray; only the tray's **Quit** (`app.exit(0)`, `code: Some`) actually exits.
+- **System tray** (`tauri`'s built-in `tray-icon` feature — no new crate): a
+  menu with **Show Orb / Hide Orb / Open Luxion / Quit**. Left-click opens the
+  menu (the Tauri default) so Quit is always reachable without betting on
+  platform-specific right-click behaviour.
+- **Frontend: a second Vite entry.** `orb.html` + `src/orb.tsx` mount a tiny
+  React root — `GraphicsProvider` + `AppearanceProvider` (both read their
+  persisted config independently; `localStorage` is shared between the
+  same-origin Tauri webviews, so the orb picks up the user's accent) over a new
+  `AIStateMirrorProvider`. `vite.config.ts` gains `rollupOptions.input` for both
+  entries; the orb JS is a ~2.8 kB chunk with three.js still code-split.
+- **State stays owned once across webviews.** The main window's driving
+  `AIStateProvider` now publishes every state through new `lib/orbBridge.ts`
+  (`@tauri-apps/api/event` emit; a no-op in a plain browser). The orb's
+  `AIStateMirrorProvider` (in `aiState.tsx`) only *displays* what it receives —
+  `setState`/`pulse` are no-ops and `fireClickPulse` bumps a local click nonce
+  for instant press feedback. So Chat pulses, voice frames, biometrics and
+  sleep/wake all reach the floating orb without a second owner.
+- **`OrbCore.tsx` (new).** Reuses every frozen `Core*` primitive and
+  `CoreController`/`CoreDrive` unchanged, just centred, with a `FitCamera` that
+  backs the camera off so the orb always fills ~76% of the window's smaller axis
+  — drag the floating window to any shape and it re-fits. Interaction split: the
+  transparent **margin** is the `data-tauri-drag-region` (drag to move), the
+  **core** is the click target that flips the mic. The click uses the new shared
+  `flipVoiceListening()` in `lib/voice.ts` (extracted from `voiceOrb` so the
+  provider and the orb share one read-then-write), and its resulting LISTENING
+  state arrives back via the mirror — never driven twice.
+- **Capabilities** (`capabilities/default.json`) now cover both windows:
+  `core:default` (events for the mirror) plus an explicit
+  `core:window:allow-start-dragging` for the orb's drag region.
+- **Gates** — `tsc -b`, `oxlint`, `vite build` (both entries) and `cargo check`
+  all clean (exit 0); backend 835 passed / 1 skipped. Zero new deps: the orb
+  reuses `@tauri-apps/api`/three.js/React, and the tray rides the `tauri`
+  crate's `tray-icon` feature.
+- **Not in 12b / next** — a live `tauri dev` GUI eyeball (the orb's
+  transparency, always-on-top, drag, resize, persistence and the tray are
+  compile-verified only, since a windowed app can't run headless), then
+  **Phase 13 — Advanced Agent**. Minor follow-up idea: live-sync an accent
+  change from Settings to an already-running orb (it currently reads the accent
+  at startup).
 
 ### Phase 12a — Orb states + voice wiring (✅ done 2026-10-26, committed `0e1d00c`)
 

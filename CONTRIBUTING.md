@@ -7,12 +7,11 @@ This guide covers how to set the project up, the conventions the codebase
 follows, how to add a tool (the most common contribution), and what we expect
 from a pull request.
 
-**Current state:** Phases 0–11 shipped and **Phase 12a** (3D orb interaction)
-in — **70 built-in tools**, **836 tests**, memory + RAG, browser/desktop/coding
-/web agents, email + WhatsApp + toast notifications, vision (image analysis,
-camera, OCR, voice + face auth), and a voice-reactive 3D core with all eleven
-status states. **Phase 12b** (Tauri floating window + tray) and Phase 13
-(advanced agent) are open.
+**Current state:** Phases 0–12 shipped — **70 built-in tools**, **836 tests**,
+memory + RAG, browser/desktop/coding/web agents, email + WhatsApp + toast
+notifications, vision (image analysis, camera, OCR, voice + face auth), a
+voice-reactive 3D core with all eleven status states, and the desktop orb
+window + system tray. **Phase 13** (advanced agent) is the open phase.
 
 - Product requirements (source of truth): [`prd.md`](prd.md)
 - Install & usage guide: [`SETUP.md`](SETUP.md)
@@ -142,6 +141,13 @@ cd frontend
 npx tauri dev
 ```
 
+This opens the main window **and** the floating orb window (PRD §29, Phase
+12b), plus a system-tray icon. The orb is a second webview (`orb.html`) that
+*mirrors* the main window's AI state over Tauri events — it never owns state
+itself. Rust lives in `frontend/src-tauri/` (`src/lib.rs` builds the orb
+window, its position persistence and the tray); check it compiles with
+`cargo check` inside `frontend/src-tauri/`.
+
 ### 7. Playwright (needed for the browser agent)
 
 ```powershell
@@ -268,9 +274,14 @@ plugins and builtins stay interchangeable.
   a state without a label/tuning/colour fails to compile. Don't set core state
   from a new place without reading `voiceOwns()` first — it decides whether the
   voice stream may interrupt what you're doing. `src/lib/voiceOrb.tsx` owns the
-  global `/voice/events` subscription and the click-to-listen toggle.
+  global `/voice/events` subscription and the click-to-listen toggle. The
+  **floating orb window** (`orb.html`/`orb.tsx`, Phase 12b) is a second webview
+  that *mirrors* that owner via `AIStateMirrorProvider` + `src/lib/orbBridge.ts`
+  — never give it its own state; publish from the main window instead.
 - three.js stays **code-split** behind
-  `lazy(() => import('./components/three/AI3DCore'))`.
+  `lazy(() => import('./components/three/AI3DCore'))`. The orb window is a
+  second Vite entry (`orb.html`); `src/components/three/OrbCore.tsx` reuses the
+  frozen `Core*` primitives rather than forking them.
 
 ### Formatting (all files)
 
